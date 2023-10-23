@@ -1,2 +1,2 @@
-from .human import HumanAgent
+from .human import HumanAgent, TerminalAgent
 from .ai import *

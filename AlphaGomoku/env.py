@@ -81,8 +81,22 @@ class Env:
             self._agent_eval = MCTSAgent(conf, color=WHITE, use_stochastic_policy=False)
             self._agent_eval.set_self_play(False)
 
+        # AI vs Terminal
+        if conf['mode'] == 14:
+            self._agent_1 = MCTSAgent(conf, color=BLACK, use_stochastic_policy=False)
+            self._agent_2 = TerminalAgent(self._renderer, color=WHITE, board_size=conf['board_size'])
+
+        if conf['mode'] == 14.5:
+            self._agent_1 = TerminalAgent(self._renderer, color=BLACK, board_size=conf['board_size'])
+            self._agent_2 = MCTSAgent(conf, color=WHITE, use_stochastic_policy=False)
+        
+
         if self._is_self_play:
             self._agent_2 = self._agent_1
+
+        
+
+        
 
         self._rules = Rules(conf)
         self._renderer = Renderer(conf['screen_size'], conf['board_size']) if conf['display'] else None
@@ -98,7 +112,7 @@ class Env:
         mode = self._conf['mode']
         if mode == 1 or mode == 0:
             self.train()
-        if mode in [2, 2.5, 3, 9, 10]:
+        if mode in [2, 2.5, 3, 9, 10,14,14.5]:
             self.run(use_stochastic_policy=False)
         if mode == 4:
             self.compare(game_num=50)
@@ -114,6 +128,7 @@ class Env:
             self.train_on_generated_data()
         if mode == 13:
             self.self_play_and_train()
+        
 
     def set_mcts_agent_version(self, agent_1_ver, agent_2_ver):
         self._agent_1_ver = agent_1_ver
@@ -145,6 +160,8 @@ class Env:
             # output.value: the winning rate given by the current agent
             action, pi, prior_prob, value = self._current_agent().play(obs=self._obs(), action=self._board.last_move(),
                                                                        stone_num=self._board.stone_num())
+            
+        
 
             # show score: an agent will work as an evaluator, giving its evaluation of each possible position
             if self._show_score:
@@ -200,7 +217,7 @@ class Env:
                 if value is not None:
                     self._value_list.append(float(value))
                 if len(self._value_list) >= 5 and self._board.stone_num() >= 30:
-                    if self._conf['mode'] in [2, 2.5] and sum(list(map(np.abs, self._value_list[-5:]))) < 0.06:
+                    if self._conf['mode'] in [2, 2.5,14,14.5] and sum(list(map(np.abs, self._value_list[-5:]))) < 0.06:
                         self._value_list = []
                         if ask_for_draw() == 1:
                             show_result(2, 'draw')
@@ -225,7 +242,7 @@ class Env:
                     if result == 'draw':
                         flag = 0
                     record.set_z(flag)
-                if self._conf['mode'] in [2, 2.5, 3, 4, 9]:
+                if self._conf['mode'] in [2, 2.5, 3, 4, 9,14,14.5]:
                     time.sleep(30)
                 break
         self._board.clear()

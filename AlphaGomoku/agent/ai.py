@@ -50,6 +50,7 @@ class MCTSAgent(AI):
     def play(self, obs, action, stone_num):
         act_ind, pi, prior_prob, value = self._mcts.action(obs, action, stone_num)
         act_cor = index2coordinate(act_ind, self._board_size)
+   
         return act_cor, pi, prior_prob, value
 
     def set_self_play(self, is_self_play):

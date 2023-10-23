@@ -19,6 +19,7 @@ def select_mode():
     print('> 11: Train on generated data')
     print('> 12: Collect self play data(Fast AI)')
     print('> 13: Self play and train')
+    print('> 14: AI vs Terminal')
     _mode = int(input('> mode = '))
 
     if _mode == 2:
@@ -26,6 +27,12 @@ def select_mode():
         is_black = int(input('> color = '))
         if is_black == 1:
             _mode = 2.5
+    
+    if _mode == 14:
+        print('> Please select your color: (1: Black, 0: White)')
+        is_black = int(input('> color = '))
+        if is_black == 1:
+            _mode = 14.5
 
     return _mode
 

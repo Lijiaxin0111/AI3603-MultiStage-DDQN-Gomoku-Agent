@@ -203,7 +203,7 @@ class Renderer(threading.Thread):
         v = infos[1]
         num = infos[2]
 
-        if self._board_size == 8:
+        if self._board_size == 8 or self._board_size == 9:
             # position_1 = (int((action[1] + 0.63) * self._spacing), int((action[0] + 0.76) * self._spacing))
             if float(infos[1]) >= 0:
                 position_2 = (int((action[1] + 0.62) * self._spacing), int((action[0] + 0.78) * self._spacing))

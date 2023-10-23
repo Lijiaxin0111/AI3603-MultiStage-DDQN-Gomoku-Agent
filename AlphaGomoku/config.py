@@ -112,7 +112,7 @@ class Config(dict):
             self[key] = kwargs[key]
 
     def set_mode(self, mode):
-        if mode not in [1, 2, 2.5, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 0]:
+        if mode not in [1, 2, 2.5, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 0,14,14.5]:
             print('> Error: mode not found!')
             mode = 1
         if mode == 1:
@@ -213,6 +213,20 @@ class Config(dict):
             self['careful_stage'] = 226   # disable careful stage
             self['mode'] = 13
             print('> Self play and train mode')
+        if mode == 14:
+            self['display'] = True
+            self['is_self_play'] = False
+            self['mode'] = 14
+            self['simulation_times'] = 800
+            self['show_score'] = False
+            print('> AI vs Terminal mode')
+        if mode == 14.5:
+            self['display'] = True
+            self['is_self_play'] = False
+            self['mode'] = 14.5
+            self['simulation_times'] = 800
+            self['show_score'] = False
+            print('> AI vs Terminal mode')
         if mode == 0:
             self['display'] = True
             self['is_self_play'] = True
