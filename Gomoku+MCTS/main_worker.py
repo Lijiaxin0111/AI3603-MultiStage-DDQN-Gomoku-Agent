@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-An implementation of the training pipeline of AlphaZero for Gomoku
-
-@author: Junxiao Song
-"""
-
 from __future__ import print_function
 import random
 import numpy as np
@@ -18,40 +11,72 @@ from policy_value_net_pytorch import PolicyValueNet  # Pytorch
 # from policy_value_net_keras import PolicyValueNet # Keras
 # import joblib
 
+
+from config.options import *
+import sys
+from config.utils  import *
+from torch.backends import cudnn
+
+import torch
+
+from tqdm import *
+from torch.utils.tensorboard import SummaryWriter
+
+def std_log():
+    if get_rank() == 0:
+        save_path = make_path()
+        makedir(config['log_base'])
+        sys.stdout = open(os.path.join(config['log_base'], "{}.txt".format(save_path)), "w")
+
+
+def init_seeds(seed, cuda_deterministic=True):
+    torch.manual_seed(seed)
+    if cuda_deterministic:  # slower, more reproducible
+       cudnn.deterministic = True
+       cudnn.benchmark = False
+    else:  # faster, less reproducible
+       cudnn.deterministic = False
+       cudnn.benchmark = True
+
+
+
+
 class TrainPipeline():
-    def __init__(self, init_model=None):
-        # params of the board and the game
-        self.board_width = 8
-        self.board_height = 8
-        self.n_in_row = 5
+    def __init__(self):
+
+        #--- init the set of pipeline -------
+        self.board_width = opts.board_width
+        self.board_height = opts.board_height
+        self.n_in_row = opts.n_in_row
+        self.learn_rate = opts.learn_rate
+        self.lr_multiplier = opts.lr_multiplier
+        self.temp = opts.temp 
+        self.n_playout = opts.n_playout  
+        self.c_puct = opts.c_puct
+        self.buffer_size = opts.buffer_size
+        self.batch_size = opts.batch_size  
+        self.play_batch_size = opts.play_batch_size
+        self.epochs = opts.epochs 
+        self.kl_targ = opts.kl_targ
+        self.check_freq = opts.check_freq
+        self.game_batch_num = opts.game_batch_num 
+        self.pure_mcts_playout_num = opts.pure_mcts_playout_num
+
+
+
         self.board = Board(width=self.board_width,
                            height=self.board_height,
                            n_in_row=self.n_in_row) #!
         self.game = Game(self.board) #!
-        # training params 
-        self.learn_rate = 2e-3
-        self.lr_multiplier = 1.0  # adaptively adjust the learning rate based on KL
-        self.temp = 1.0  # the temperature param
-        self.n_playout = 200  # num of simulations for each move 400 -> 200
-        self.c_puct = 5
-        self.buffer_size = 10000
-        self.batch_size = 512  # mini-batch size for training
         self.data_buffer = deque(maxlen=self.buffer_size) #!
-        self.play_batch_size = 1
-        self.epochs = 5  # num of train_steps for each update
-        self.kl_targ = 0.02
-        self.check_freq = 50
-        self.game_batch_num = 1500
+
         self.best_win_ratio = 0.0 #!
-        # num of simulations used for the pure mcts, which is used as
-        # the opponent to evaluate the trained policy
-        self.pure_mcts_playout_num = 200 # 1000 -> 200
-        if init_model:
+
+        if opts.preload_model:
             # start training from an initial policy-value net
             self.policy_value_net = PolicyValueNet(self.board_width,
                                                    self.board_height,
-                                                   model_file=init_model)
-            
+                                                   model_file=opts.preload_model)
 
         else:
             # start training from a new policy-value net
@@ -169,6 +194,7 @@ class TrainPipeline():
     def run(self):
         """run the training pipeline"""
         try:
+            
             for i in range(self.game_batch_num):
                 self.collect_selfplay_data(self.play_batch_size)
                 print("batch i:{}, episode_len:{}".format(
@@ -194,7 +220,40 @@ class TrainPipeline():
             print('\n\rquit')
 
 
-if __name__ == '__main__':
-    training_pipeline = TrainPipeline(init_model=r"C:\Users\li_jiaxin\Desktop\AI3603\BGWH\code\AI_3603_BIGHOME\AlphaZero_Gomoku\best_policy_8_8_5_2torch.pth")
-    training_pipeline.run()
-    training_pipeline.policy_evaluate()
+
+
+
+
+
+if __name__ == "__main__":
+    print("START train....")
+
+    # ------init set-----------
+
+    if opts.std_log:
+        std_log()
+    writer = visualizer()
+    
+
+    if opts.distributed:
+        torch.distributed.init_process_group(backend="nccl")
+        local_rank = torch.distributed.get_rank()
+        torch.cuda.set_device(local_rank)
+        device = torch.device("cuda", local_rank)
+        init_seeds(opts.seed + local_rank)
+        
+    else:
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        init_seeds(opts.seed)
+
+        
+
+
+    if opts.split == "train":
+        training_pipeline = TrainPipeline()
+        training_pipeline.run()
+
+    if get_rank() == 0 and opts.split == "test":
+        training_pipeline = TrainPipeline()
+        training_pipeline.policy_value_net()
+

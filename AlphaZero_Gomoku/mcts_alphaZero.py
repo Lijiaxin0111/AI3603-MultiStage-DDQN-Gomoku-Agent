@@ -146,9 +146,6 @@ class MCTS(object):
 
         start_time_averge = 0
 
-
-
-    
         for n in range(self._n_playout):
             start_time = time.time()
 
@@ -195,6 +192,7 @@ class MCTSPlayer(object):
     def reset_player(self):
         self.mcts.update_with_move(-1)
 
+    
     def get_action(self, board, temp=1e-3, return_prob=0):
         sensible_moves = board.availables
         # the pi vector returned by MCTS as in the alphaGo Zero paper
@@ -212,6 +210,7 @@ class MCTSPlayer(object):
                 # update the root node and reuse the search tree
                 self.mcts.update_with_move(move)
             else:
+            
                 # with the default temp=1e-3, it is almost equivalent
                 # to choosing the move with the highest prob
                 move = np.random.choice(acts, p=probs)

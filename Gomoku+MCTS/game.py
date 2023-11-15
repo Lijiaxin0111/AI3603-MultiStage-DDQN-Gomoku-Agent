@@ -224,6 +224,8 @@ class Game(object):
                     else:
                         print("Game end. Tie")
                 return winner, zip(states, mcts_probs, winners_z)
+            
+# 多了下面这一串测试代码
 
     def policy_evaluate(self, n_games=10):
         """

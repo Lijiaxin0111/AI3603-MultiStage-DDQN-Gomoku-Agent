@@ -169,7 +169,7 @@ class MCTS(object):
             start_time = time.time()
             state_copy = copy.deepcopy(state)
             self._playout(state_copy)
-            start_time_averge += (time.time() - start_time)
+
         
         print(f" PureMCTS sum_time: {start_time_averge }, total_simulation: {self._n_playout}")
 
