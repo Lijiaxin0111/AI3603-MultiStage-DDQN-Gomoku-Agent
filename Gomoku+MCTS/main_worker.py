@@ -5,6 +5,7 @@ from collections import defaultdict, deque
 from game import Board, Game
 from mcts_pure import MCTSPlayer as MCTS_Pure
 from mcts_alphaZero import MCTSPlayer
+import torch.optim as optim
 # from policy_value_net import PolicyValueNet  # Theano and Lasagne
 from policy_value_net_pytorch import PolicyValueNet  # Pytorch
 # from policy_value_net_tensorflow import PolicyValueNet # Tensorflow
@@ -41,8 +42,8 @@ def init_seeds(seed, cuda_deterministic=True):
 
 
 
-class TrainPipeline():
-    def __init__(self):
+class MainWorker():
+    def __init__(self,device):
 
         #--- init the set of pipeline -------
         self.board_width = opts.board_width
@@ -62,30 +63,45 @@ class TrainPipeline():
         self.game_batch_num = opts.game_batch_num 
         self.pure_mcts_playout_num = opts.pure_mcts_playout_num
 
-
+        self.device = device
 
         self.board = Board(width=self.board_width,
                            height=self.board_height,
-                           n_in_row=self.n_in_row) #!
-        self.game = Game(self.board) #!
-        self.data_buffer = deque(maxlen=self.buffer_size) #!
+                           n_in_row=self.n_in_row) 
+        self.game = Game(self.board) 
 
-        self.best_win_ratio = 0.0 #!
+        # The data collection of the history of games
+        self.data_buffer = deque(maxlen=self.buffer_size) 
+
+
+        # The best win ratio of the training agent
+        self.best_win_ratio = 0.0 
+
+
 
         if opts.preload_model:
             # start training from an initial policy-value net
             self.policy_value_net = PolicyValueNet(self.board_width,
                                                    self.board_height,
-                                                   model_file=opts.preload_model)
+                                                   model_file=opts.preload_model,
+                                                   use_gpu=(self.device == "cuda"))
 
         else:
             # start training from a new policy-value net
             self.policy_value_net = PolicyValueNet(self.board_width,
-                                                   self.board_height)
+                                                   self.board_height,
+                                                   use_gpu=(self.device == "cuda"))
         self.mcts_player = MCTSPlayer(self.policy_value_net.policy_value_fn,
                                       c_puct=self.c_puct,
                                       n_playout=self.n_playout,
                                       is_selfplay=1)
+        
+        # The set of optimizer
+        # self.optimizer = optim.Adam(self.policy_value_net.parameters(),
+        #                                     weight_decay=opts.l2_const)    
+        
+
+ 
 
     def get_equi_data(self, play_data):
         """augment the data set by rotation and flipping
@@ -111,7 +127,11 @@ class TrainPipeline():
 
     def collect_selfplay_data(self, n_games=1):
         """collect self-play data for training"""
-        for i in range(n_games):
+        # print("[STAGE] Collecting self-play data for training")
+
+        collection_bar = tqdm( range(n_games))
+
+        for i in collection_bar:
             winner, play_data = self.game.start_self_play(self.mcts_player,
                                                           temp=self.temp)
             play_data = list(play_data)[:]
@@ -120,6 +140,11 @@ class TrainPipeline():
             play_data = self.get_equi_data(play_data)
             self.data_buffer.extend(play_data)
 
+            collection_bar.set_description(f"collection epoch: {i}")
+     
+            collection_bar.set_postfix( data_buffer_length= len(self.data_buffer))
+
+
     def policy_update(self):
         """update the policy-value net"""
         mini_batch = random.sample(self.data_buffer, self.batch_size)
@@ -127,7 +152,10 @@ class TrainPipeline():
         mcts_probs_batch = [data[1] for data in mini_batch]
         winner_batch = [data[2] for data in mini_batch]
         old_probs, old_v = self.policy_value_net.policy_value(state_batch)
-        for i in range(self.epochs):
+
+        epoch_bar = tqdm(range(self.epochs))
+
+        for i in epoch_bar:
             loss, entropy = self.policy_value_net.train_step(
                     state_batch,
                     mcts_probs_batch,
@@ -140,11 +168,17 @@ class TrainPipeline():
             )
             if kl > self.kl_targ * 4:  # early stopping if D_KL diverges badly
                 break
+
+            epoch_bar.set_description(f"training epoch {i}")
+            epoch_bar.set_postfix( new_v =new_v, kl = kl)
+
         # adaptively adjust the learning rate
         if kl > self.kl_targ * 2 and self.lr_multiplier > 0.1:
             self.lr_multiplier /= 1.5
         elif kl < self.kl_targ / 2 and self.lr_multiplier < 10:
             self.lr_multiplier *= 1.5
+
+
 
         explained_var_old = (1 -
                              np.var(np.array(winner_batch) - old_v.flatten()) /
@@ -152,19 +186,11 @@ class TrainPipeline():
         explained_var_new = (1 -
                              np.var(np.array(winner_batch) - new_v.flatten()) /
                              np.var(np.array(winner_batch)))
-        print(("kl:{:.5f},"
-               "lr_multiplier:{:.3f},"
-               "loss:{},"
-               "entropy:{},"
-               "explained_var_old:{:.3f},"
-               "explained_var_new:{:.3f}"
-               ).format(kl,
-                        self.lr_multiplier,
-                        loss,
-                        entropy,
-                        explained_var_old,
-                        explained_var_new))
-        return loss, entropy
+        
+
+    
+
+        return   kl,  loss, entropy,explained_var_old, explained_var_new
 
     def policy_evaluate(self, n_games=10):
         """
@@ -194,35 +220,45 @@ class TrainPipeline():
     def run(self):
         """run the training pipeline"""
         try:
-            
-            for i in range(self.game_batch_num):
+
+            batch_bar = tqdm(range(self.game_batch_num))
+            for i in batch_bar:
                 self.collect_selfplay_data(self.play_batch_size)
-                print("batch i:{}, episode_len:{}".format(
-                        i+1, self.episode_len))
+
                 if len(self.data_buffer) > self.batch_size:
-                    loss, entropy = self.policy_update()
+                    kl,  loss, entropy,explained_var_old, explained_var_new = self.policy_update()
+
+
+                    writer.add_scalar("policy_update/kl", kl ,i )
+                    writer.add_scalar("policy_update/loss", loss ,i)
+                    writer.add_scalar("policy_update/entropy", entropy ,i)
+                    writer.add_scalar("policy_update/explained_var_old", explained_var_old,i)
+                    writer.add_scalar("policy_update/explained_var_new ", explained_var_new ,i)
+
+
+                batch_bar.set_description(f"game batch num {i}")
+    
                 # check the performance of the current model,
                 # and save the model params
                 if (i+1) % self.check_freq == 0:
-                    print("current self-play batch: {}".format(i+1))
                     win_ratio = self.policy_evaluate()
-                    self.policy_value_net.save_model('./current_policy.model')
+
+                    batch_bar.set_description(f"game batch num {i+1}")
+                    writer.add_scalar("evaluate/explained_var_new ", win_ratio ,i)
+                    batch_bar.set_postfix(loss= loss, entropy= entropy,win_ratio =win_ratio)
+
+                    save_model(self.policy_value_net,"current_policy.model")
                     if win_ratio > self.best_win_ratio:
                         print("New best policy!!!!!!!!")
                         self.best_win_ratio = win_ratio
                         # update the best_policy
-                        self.policy_value_net.save_model('./best_policy.model')
+                        save_model(self.policy_value_net,"best_policy.model")
                         if (self.best_win_ratio == 1.0 and
                                 self.pure_mcts_playout_num < 5000):
                             self.pure_mcts_playout_num += 1000
                             self.best_win_ratio = 0.0
         except KeyboardInterrupt:
             print('\n\rquit')
-
-
-
-
-
 
 
 if __name__ == "__main__":
@@ -246,14 +282,16 @@ if __name__ == "__main__":
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         init_seeds(opts.seed)
 
-        
+    print("seed: ",opts.seed )
+    print("device:" , device)
 
 
     if opts.split == "train":
-        training_pipeline = TrainPipeline()
+        training_pipeline = MainWorker(device)
+
         training_pipeline.run()
 
     if get_rank() == 0 and opts.split == "test":
-        training_pipeline = TrainPipeline()
+        training_pipeline = MainWorker(device)
         training_pipeline.policy_value_net()
 

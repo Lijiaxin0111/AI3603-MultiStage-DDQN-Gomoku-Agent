@@ -46,7 +46,7 @@ parser.add_argument("--epochs",type=int,default=5,help="num of train_steps for e
 parser.add_argument("--kl_targ",type=float,default=0.02,help="??")
 parser.add_argument("--check_freq",type=int,default=50,help='??')
 parser.add_argument("--game_batch_num",type=int,default=1500)
-
+parser.add_argument("--l2_const",type=float,default=1e-4,help=" coef of l2 penalty")
 parser.add_argument("--distributed",type=bool,default=False)
 
 # preload_model setting
