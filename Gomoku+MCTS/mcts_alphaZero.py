@@ -8,7 +8,9 @@ network to guide the tree search and evaluate the leaf nodes
 
 import numpy as np
 import copy
-import time 
+import time
+from concurrent.futures import ThreadPoolExecutor
+import threading
 
 
 def softmax(x):
@@ -104,25 +106,30 @@ class MCTS(object):
         self._c_puct = c_puct
         self._n_playout = n_playout
 
-    def _playout(self, state):
+    def _playout(self, state, lock=None):
         """Run a single playout from the root to the leaf, getting a value at
         the leaf and propagating it back through its parents.
         State is modified in-place, so a copy must be provided.
         """
         node = self._root
+        if lock:
+            lock.acquire()
         while(1):
             if node.is_leaf():
                 break
             # Greedily select next move.
             action, node = node.select(self._c_puct)
             state.do_move(action)
-
+        if lock:
+            lock.release()
         # Evaluate the leaf using a network which outputs a list of
         # (action, probability) tuples p and also a score v in [-1, 1]
         # for the current player.
         action_probs, leaf_value = self._policy(state)
         # Check for end of game.
         end, winner = state.game_end()
+        if lock:
+            lock.acquire()
         if not end:
             node.expand(action_probs)
         else:
@@ -136,6 +143,8 @@ class MCTS(object):
 
         # Update value and visit count of nodes in this traversal.
         node.update_recursive(-leaf_value)
+        if lock:
+            lock.release()
 
     def get_move_probs(self, state, temp=1e-3):
         """Run all playouts sequentially and return the available actions and
@@ -146,15 +155,25 @@ class MCTS(object):
 
         start_time_averge = 0
 
+        use_multi_thread = True
+        if use_multi_thread:
+            ### test multi-thread
+            lock = threading.Lock()
+            with ThreadPoolExecutor(max_workers=4) as executor:
+                for n in range(self._n_playout):
+                    start_time = time.time()
 
+                    state_copy = copy.deepcopy(state)
+                    executor.submit(self._playout, state_copy, lock)
+                    start_time_averge += (time.time() - start_time)
+            ### end test multi-thread
+        else:
+            for n in range(self._n_playout):
+                start_time = time.time()
 
-    
-        for n in range(self._n_playout):
-            start_time = time.time()
-
-            state_copy = copy.deepcopy(state)
-            self._playout(state_copy)
-            start_time_averge += (time.time() - start_time)
+                state_copy = copy.deepcopy(state)
+                self._playout(state_copy)
+                start_time_averge += (time.time() - start_time)
         
         # print(f" My MCTS sum_time: {start_time_averge }, total_simulation: {self._n_playout}")
 
