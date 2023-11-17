@@ -87,9 +87,6 @@ class MainWorker():
         self.best_win_ratio = 0.0 
 
 
-
-
-
         if opts.preload_model:
             # start training from an initial policy-value net
             self.policy_value_net = PolicyValueNet(self.board_width,

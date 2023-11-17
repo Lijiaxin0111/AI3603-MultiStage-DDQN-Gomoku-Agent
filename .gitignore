@@ -4,3 +4,8 @@ __pycache__
 
 *.h5
 
+
+
+**/visualization/**
+
+**/checkpoints/**
