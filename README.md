@@ -13,6 +13,9 @@
 - 2023-11-17. ljx. 对训练框架进行简单修改，增加了：
   - 将网络里面train_step 的代码移植到main_worker中,之后写value net可以不用写train step函数
 
-- 2023-11-17.sjz. 将sylogin服务器上的conda环境配置完成
+- 2023-11-17.sjz.
+  -  将sylogin服务器上的conda环境配置完成
+  -  对网络进行改进： 使用DuelingNet的架构: 有待验证 性能
+  
 
 
