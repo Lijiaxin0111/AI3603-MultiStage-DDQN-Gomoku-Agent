@@ -7,10 +7,13 @@ from mcts_pure import MCTSPlayer as MCTS_Pure
 from mcts_alphaZero import MCTSPlayer
 import torch.optim as optim
 # from policy_value_net import PolicyValueNet  # Theano and Lasagne
-from policy_value_net_pytorch import PolicyValueNet  # Pytorch
+# from policy_value_net_pytorch import PolicyValueNet  # Pytorch
+from dueling_net import PolicyValueNet
 # from policy_value_net_tensorflow import PolicyValueNet # Tensorflow
 # from policy_value_net_keras import PolicyValueNet # Keras
 # import joblib
+from torch.autograd import Variable
+import torch.nn.functional as F
 
 
 from config.options import *
@@ -22,6 +25,11 @@ import torch
 
 from tqdm import *
 from torch.utils.tensorboard import SummaryWriter
+
+def set_learning_rate(optimizer, lr):
+    """Sets the learning rate to the given value"""
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = lr
 
 def std_log():
     if get_rank() == 0:
@@ -64,6 +72,7 @@ class MainWorker():
         self.pure_mcts_playout_num = opts.pure_mcts_playout_num
 
         self.device = device
+        self.use_gpu = torch.device("cuda") ==  self.device
 
         self.board = Board(width=self.board_width,
                            height=self.board_height,
@@ -76,6 +85,8 @@ class MainWorker():
 
         # The best win ratio of the training agent
         self.best_win_ratio = 0.0 
+
+
 
 
 
@@ -97,8 +108,10 @@ class MainWorker():
                                       is_selfplay=1)
         
         # The set of optimizer
-        # self.optimizer = optim.Adam(self.policy_value_net.parameters(),
-        #                                     weight_decay=opts.l2_const)    
+        self.optimizer = optim.Adam(self.policy_value_net.policy_value_net.parameters(),
+                                            weight_decay=opts.l2_const)  
+        # set learning rate
+        set_learning_rate(self.optimizer, self.learn_rate*self.lr_multiplier)
         
 
  
@@ -156,11 +169,37 @@ class MainWorker():
         epoch_bar = tqdm(range(self.epochs))
 
         for i in epoch_bar:
-            loss, entropy = self.policy_value_net.train_step(
-                    state_batch,
-                    mcts_probs_batch,
-                    winner_batch,
-                    self.learn_rate*self.lr_multiplier)
+            """perform a training step"""
+            # wrap in Variable
+            if self.use_gpu:
+                state_batch = Variable(torch.FloatTensor(state_batch).cuda())
+                mcts_probs = Variable(torch.FloatTensor(mcts_probs_batch).cuda())
+                winner_batch = Variable(torch.FloatTensor(winner_batch).cuda())
+            else:
+                state_batch = Variable(torch.FloatTensor(state_batch))
+                mcts_probs = Variable(torch.FloatTensor(mcts_probs_batch))
+                winner_batch = Variable(torch.FloatTensor(winner_batch))
+
+            # zero the parameter gradients
+            self.optimizer.zero_grad()
+
+            # forward
+            log_act_probs, value = self.policy_value_net.policy_value_net(state_batch)
+            # define the loss = (z - v)^2 - pi^T * log(p) + c||theta||^2
+            # Note: the L2 penalty is incorporated in optimizer
+            value_loss = F.mse_loss(value.view(-1), winner_batch)
+            policy_loss = -torch.mean(torch.sum(mcts_probs*log_act_probs, 1))
+            loss = value_loss + policy_loss
+            # backward and optimize
+            loss.backward()
+            self.optimizer.step()
+            # calc policy entropy, for monitoring only
+            entropy = -torch.mean(
+                    torch.sum(torch.exp(log_act_probs) * log_act_probs, 1)
+                    )
+            loss = loss.item()
+            entropy = entropy.item()
+    
             new_probs, new_v = self.policy_value_net.policy_value(state_batch)
             kl = np.mean(np.sum(old_probs * (
                     np.log(old_probs + 1e-10) - np.log(new_probs + 1e-10)),
@@ -228,7 +267,6 @@ class MainWorker():
                 if len(self.data_buffer) > self.batch_size:
                     kl,  loss, entropy,explained_var_old, explained_var_new = self.policy_update()
 
-
                     writer.add_scalar("policy_update/kl", kl ,i )
                     writer.add_scalar("policy_update/loss", loss ,i)
                     writer.add_scalar("policy_update/entropy", entropy ,i)
@@ -288,7 +326,6 @@ if __name__ == "__main__":
 
     if opts.split == "train":
         training_pipeline = MainWorker(device)
-
         training_pipeline.run()
 
     if get_rank() == 0 and opts.split == "test":

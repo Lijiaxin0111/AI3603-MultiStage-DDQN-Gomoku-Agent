@@ -14,10 +14,7 @@ from torch.autograd import Variable
 import numpy as np
 
 
-def set_learning_rate(optimizer, lr):
-    """Sets the learning rate to the given value"""
-    for param_group in optimizer.param_groups:
-        param_group['lr'] = lr
+
 
 
 class Net(nn.Module):
@@ -64,14 +61,12 @@ class PolicyValueNet():
         self.use_gpu = use_gpu
         self.board_width = board_width
         self.board_height = board_height
-        self.l2_const = 1e-4  # coef of l2 penalty
+    
         # the policy value net module
         if self.use_gpu:
             self.policy_value_net = Net(board_width, board_height).cuda()
         else:
             self.policy_value_net = Net(board_width, board_height)
-        self.optimizer = optim.Adam(self.policy_value_net.parameters(),
-                                    weight_decay=self.l2_const)
 
         if model_file:
             net_params = torch.load(model_file)
@@ -113,6 +108,9 @@ class PolicyValueNet():
         act_probs = zip(legal_positions, act_probs[legal_positions])
         value = value.data[0][0]
         return act_probs, value
+    
+
+# 搬到main_worker
 
     def train_step(self, state_batch, mcts_probs, winner_batch, lr):
         """perform a training step"""
@@ -151,11 +149,11 @@ class PolicyValueNet():
         #for pytorch version >= 0.5 please use the following line instead.
         return loss.item(), entropy.item()
 
-    def get_policy_param(self):
-        net_params = self.policy_value_net.state_dict()
-        return net_params
+    # def get_policy_param(self):
+    #     net_params = self.policy_value_net.state_dict()
+    #     return net_params
 
-    def save_model(self, model_file):
-        """ save model params to file """
-        net_params = self.get_policy_param()  # get model params
-        torch.save(net_params, model_file)
+    # def save_model(self, model_file):
+    #     """ save model params to file """
+    #     net_params = self.get_policy_param()  # get model params
+    #     torch.save(net_params, model_file)

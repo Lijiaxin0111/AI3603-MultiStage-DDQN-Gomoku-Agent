@@ -34,12 +34,11 @@ parser.add_argument("--split",type=str,default="train",help="the mode of woker")
 # train settings
 parser.add_argument("--expri",type=str, default="",help="the name of experiment")
 parser.add_argument("--learn_rate", type=float,default=2e-3)
+parser.add_argument("--l2_const",type=float,default=1e-4)
 # ???
 parser.add_argument("--lr_multiplier", type=float,default= 1.0 ,help="adaptively adjust the learning rate based on KL")
 parser.add_argument("--buffer_size",type=int,default=10000,help="The size of collection of game data ")
 parser.add_argument("--batch_size",type=int,default=512)
-
-# ??
 parser.add_argument("--play_batch_size",type=int, default=1,help="The time of selfplaying when collect the data")
 parser.add_argument("--epochs",type=int,default=5,help="num of train_steps for each update")
 parser.add_argument("--kl_targ",type=float,default=0.02,help="the target kl distance between the old decision function and the new decision function ")
