@@ -14,8 +14,12 @@
   - 将网络里面train_step 的代码移植到main_worker中,之后写value net可以不用写train step函数
 
 - 2023-11-17.sjz.
-  -  将sylogin服务器上的conda环境配置完成
+  -  将思源一号服务器上的conda环境配置完成
   -  对网络进行改进： 使用DuelingNet的架构: 有待验证 性能
+
+- 2023-11-19.sjz.
+  -  将PI2.0服务器上的conda环境配置完成
+  -  对收集自我对弈数据部分进行了多进程并行，对playout部分进行了多线程并行
   
 
 
