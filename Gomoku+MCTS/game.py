@@ -1,15 +1,28 @@
-from __future__ import print_function
+"""
+FileName: game.py
+Author: Jiaxin Li
+Create Date: yyyy/mm/dd
+Description: to be completed
+Edit History:
+- 2023/11/18, Sat,  Edited by Hbh (hbh001098hbh@sjtu.edu.cn)
+    - added some comments and optimize import and some structures
+"""
+
 import numpy as np
 from mcts_pure import MCTSPlayer as MCTS_Pure
 from mcts_pure import Human_Player
-from collections import defaultdict, deque
-import os
+from collections import defaultdict
+from typing import Optional
+
 
 class Board(object):
     """board for the game"""
 
     def __init__(self, **kwargs):
-        self.width = int(kwargs.get('width', 8))
+        self.last_move = None
+        self.availables = None
+        self.current_player = None
+        self.width = int(kwargs.get('width', 8))  # if no width, default 8
         self.height = int(kwargs.get('height', 8))
         # board states stored as a dict,
         # key: move as location on the board,
@@ -29,7 +42,7 @@ class Board(object):
         self.states = {}
         self.last_move = -1
 
-    def move_to_location(self, move):
+    def move_to_location(self, move: int):
         """
         3*3 board's moves like:
         6 7 8
@@ -52,8 +65,15 @@ class Board(object):
         return move
 
     def current_state(self):
-        """return the board state from the perspective of the current player.
+        """
+        return the board state from the perspective of the current player.
         state shape: 4*width*height
+        这个状态数组具有四个通道：
+        第一个通道表示当前玩家的棋子位置，第二个通道表示对手的棋子位置，第三个通道表示最后一步移动的位置。
+        第四个通道是一个指示符，用于表示当前轮到哪个玩家（如果棋盘上的总移动次数是偶数，那么这个通道的所有元素都为1，表示是第一个玩家的回合；否则，所有元素都为0，表示是第二个玩家的回合）。
+        每个通道都是一个 width x height 的二维数组，代表着棋盘的布局。对于第一个和第二个通道，如果一个位置上有当前玩家或对手的棋子，那么该位置的值为 1，否则为0。
+        对于第三个通道，只有最后一步移动的位置是1，其余位置都为0。对于第四个通道，如果是第一个玩家的回合，那么所有的位置都是1，否则都是0。
+        最后，状态数组在垂直方向上翻转，以匹配棋盘的实际布局。
         """
 
         square_state = np.zeros((4, self.width, self.height))
@@ -88,7 +108,7 @@ class Board(object):
         n = self.n_in_row
 
         moved = list(set(range(width * height)) - set(self.availables))
-        if len(moved) < self.n_in_row *2-1:
+        if len(moved) < self.n_in_row * 2 - 1:
             return False, -1
 
         for m in moved:
@@ -132,7 +152,7 @@ class Game(object):
 
     def __init__(self, board, **kwargs):
         self.board = board
-        self.pure_mcts_playout_num = 100
+        self.pure_mcts_playout_num = 100  # simulation time
 
     def graphic(self, board, player1, player2):
         """Draw the board and show game info"""
@@ -157,10 +177,6 @@ class Game(object):
                 else:
                     print('_'.center(8), end='')
             print('\r\n\r\n')
-
-        
-
-        
 
     def start_play(self, player1, player2, start_player=0, is_shown=1):
         """start a game between two players"""
@@ -191,7 +207,8 @@ class Game(object):
                 return winner
 
     def start_self_play(self, player, is_shown=0, temp=1e-3):
-        """ start a self-play game using a MCTS player, reuse the search tree,
+        """
+        start a self-play game using a MCTS player, reuse the search tree,
         and store the self-play data: (state, mcts_probs, z) for training
         """
         self.board.init_board()
@@ -224,8 +241,8 @@ class Game(object):
                     else:
                         print("Game end. Tie")
                 return winner, zip(states, mcts_probs, winners_z)
-            
-# 多了下面这一串测试代码
+
+    # 多了下面这一串测试代码
 
     def policy_evaluate(self, n_games=10):
         """
@@ -233,7 +250,7 @@ class Game(object):
         Note: this is only for monitoring the progress of training
         """
         current_mcts_player = MCTS_Pure(c_puct=5,
-                                     n_playout=self.pure_mcts_playout_num)
+                                        n_playout=self.pure_mcts_playout_num)
 
         # pure_mcts_player = MCTS_Pure(c_puct=5,
         #                              n_playout=self.pure_mcts_playout_num)
@@ -242,22 +259,23 @@ class Game(object):
         win_cnt = defaultdict(int)
         for i in range(n_games):
             winner = self.start_play(current_mcts_player,
-                                          pure_mcts_player,
-                                          start_player=i % 2,
-                                          is_shown=1)
+                                     pure_mcts_player,
+                                     start_player=i % 2,
+                                     is_shown=1)
             win_cnt[winner] += 1
-        win_ratio = 1.0*(win_cnt[1] + 0.5*win_cnt[-1]) / n_games
+        win_ratio = 1.0 * (win_cnt[1] + 0.5 * win_cnt[-1]) / n_games
         print("num_playouts:{}, win: {}, lose: {}, tie:{}".format(
-                self.pure_mcts_playout_num,
-                win_cnt[1], win_cnt[2], win_cnt[-1]))
+            self.pure_mcts_playout_num,
+            win_cnt[1], win_cnt[2], win_cnt[-1]))
         return win_ratio
+
 
 if __name__ == '__main__':
     board_width = 8
     board_height = 8
     n_in_row = 5
     board = Board(width=board_width,
-                       height=board_height,
-                       n_in_row=n_in_row)
+                  height=board_height,
+                  n_in_row=n_in_row)
     task = Game(board)
     task.policy_evaluate(n_games=10)
