@@ -26,8 +26,7 @@ import torch
 from tqdm import *
 from torch.utils.tensorboard import SummaryWriter
 
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
-from copy import deepcopy
+from multiprocessing import Pool
 
 def set_learning_rate(optimizer, lr):
     """Sets the learning rate to the given value"""
@@ -138,26 +137,25 @@ class MainWorker():
                                     winner))
         return extend_data
 
+    def job(self, i):
+        game = self.game
+        player = self.mcts_player
+        winner, play_data = game.start_self_play(player,
+                                                    temp=self.temp)
+        play_data = list(play_data)[:]
+        play_data = self.get_equi_data(play_data)
+
+        return play_data
+
     def collect_selfplay_data(self, n_games=1):
         """collect self-play data for training"""
         # print("[STAGE] Collecting self-play data for training")
 
         # collection_bar = tqdm( range(n_games))
         collection_bar = range(n_games)
-        def job(i):
-            game = deepcopy(self.game)
-            winner, play_data = game.start_self_play(self.mcts_player,
-                                                        temp=self.temp)
-            play_data = list(play_data)[:]
-            play_data = self.get_equi_data(play_data)
-            self.data_buffer.extend(play_data)
-            
-            return play_data
-
-
-        with ThreadPoolExecutor(max_workers=4) as executor:
-            for i in collection_bar:
-                executor.submit(job, i)
+        with Pool(4) as p:
+            play_data = p.map(self.job, collection_bar, chunksize=1)
+        self.data_buffer.extend(play_data)
         # print('\n', 'data buffer size:', len(self.data_buffer))
 
     def policy_update(self):

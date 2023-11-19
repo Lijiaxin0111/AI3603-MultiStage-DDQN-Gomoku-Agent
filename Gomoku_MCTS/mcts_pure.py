@@ -59,7 +59,11 @@ class TreeNode(object):
         # Count visit.
         self._n_visits += 1
         # Update Q, a running average of values for all visits.
+        # print("=====================================")
+        # print("Before, Q: {}, visits: {}, leaf_value: {}".format(self._Q, self._n_visits,leaf_value))
         self._Q += 1.0*(leaf_value - self._Q) / self._n_visits
+        # print("After, Q: {}, visits: {}, leaf_value: {}".format(self._Q, self._n_visits,leaf_value))
+
 
     def update_recursive(self, leaf_value):
         """Like a call to update(), but applied recursively for all ancestors.
@@ -166,10 +170,9 @@ class MCTS(object):
 
         need_time = time.time() - start_time
         
-        # print(f" PureMCTS sum_time: {need_time / self._n_playout }, total_simulation: {self._n_playout}")
+        print(f" PureMCTS sum_time: {need_time / self._n_playout }, total_simulation: {self._n_playout}")
 
-        return max(self._root._children.items(),
-                   key=lambda act_node: act_node[1]._n_visits)[0]
+        return max(self._root._children.items(),key=lambda act_node: act_node[1]._n_visits)[0], need_time / self._n_playout
 
     def update_with_move(self, last_move):
         """Step forward in the tree, keeping everything we already know
@@ -200,12 +203,13 @@ class MCTSPlayer(object):
     def get_action(self, board):
         sensible_moves = board.availables
         if len(sensible_moves) > 0:
-            move = self.mcts.get_move(board)
+            move, simul_mean_time = self.mcts.get_move(board)
             self.mcts.update_with_move(-1)
             print("MCTS move:", move)
-            return move
+            return move, simul_mean_time
         else:
             print("WARNING: the board is full")
+
 
     def __str__(self):
         return "MCTS {}".format(self.player)
