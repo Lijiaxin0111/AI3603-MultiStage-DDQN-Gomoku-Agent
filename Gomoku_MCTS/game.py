@@ -6,13 +6,14 @@ Description: to be completed
 Edit History:
 - 2023/11/18, Sat,  Edited by Hbh (hbh001098hbh@sjtu.edu.cn)
     - added some comments and optimize import and some structures
+- 2023/11/19, Sun,  Edited by Hbh (hbh001098hbh@sjtu.edu.cn)
+    - added an API for retrieving simulation time
 """
 
 import numpy as np
 from mcts_pure import MCTSPlayer as MCTS_Pure
 from mcts_pure import Human_Player
 from collections import defaultdict
-from typing import Optional
 
 
 class Board(object):
@@ -182,7 +183,7 @@ class Game(object):
         """start a game between two players"""
         if start_player not in (0, 1):
             raise Exception('start_player should be either 0 (player1 first) '
-                            'or 1 (player2 first)')
+                            'or 1 (player2 f1irst)')
         self.board.init_board(start_player)
         p1, p2 = self.board.players
         player1.set_player_ind(p1)

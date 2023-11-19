@@ -69,7 +69,7 @@ class PolicyValueNet():
 
         if model_file:
             net_params = torch.load(model_file)
-            self.policy_value_net.load_state_dict(net_params)
+            self.policy_value_net.load_state_dict(net_params, strict=False)
 
     def policy_value(self, state_batch):
         """
