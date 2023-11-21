@@ -13,8 +13,10 @@ Edit History:
 import numpy as np
 from mcts_pure import MCTSPlayer as MCTS_Pure
 from mcts_pure import Human_Player
+from mcts_alphaZero import MCTSPlayer as MCST_AlphaZero
 from collections import defaultdict
-
+# from policy_value_net_pytorch import PolicyValueNet
+from dueling_net import PolicyValueNet
 
 class Board(object):
     """board for the game"""
@@ -153,7 +155,7 @@ class Game(object):
 
     def __init__(self, board, **kwargs):
         self.board = board
-        self.pure_mcts_playout_num = 100  # simulation time
+        self.pure_mcts_playout_num = 200  # simulation time
 
     def graphic(self, board, player1, player2):
         """Draw the board and show game info"""
@@ -194,10 +196,7 @@ class Game(object):
         while True:
             current_player = self.board.get_current_player()
             player_in_turn = players[current_player]
-            
-            move = player_in_turn.get_action(self.board)
-            
-        
+            move = player_in_turn.get_action(self.board, return_time = False)
             self.board.do_move(move)
             if is_shown:
                 self.graphic(self.board, player1.player, player2.player)
@@ -275,8 +274,8 @@ class Game(object):
 
 
 if __name__ == '__main__':
-    board_width = 8
-    board_height = 8
+    board_width = 9
+    board_height = 9
     n_in_row = 5
     board = Board(width=board_width,
                   height=board_height,

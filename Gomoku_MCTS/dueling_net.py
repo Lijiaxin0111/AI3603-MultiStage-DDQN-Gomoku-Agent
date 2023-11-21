@@ -54,14 +54,14 @@ class DuelingDQNNet(nn.Module):
 class PolicyValueNet():
     """policy-value network """
     def __init__(self, board_width, board_height,
-                 model_file=None, use_gpu=False):
+                 model_file=None, use_gpu=False, device = None):
         self.use_gpu = use_gpu
         self.board_width = board_width
         self.board_height = board_height
         self.l2_const = 1e-4  # coef of l2 penalty
         # the policy value net module
         if self.use_gpu:
-            self.policy_value_net = DuelingDQNNet(board_width, board_height).cuda()
+            self.policy_value_net = DuelingDQNNet(board_width, board_height).to(device)
         else:
             self.policy_value_net = DuelingDQNNet(board_width, board_height)
         self.optimizer = optim.Adam(self.policy_value_net.parameters(),
@@ -77,7 +77,7 @@ class PolicyValueNet():
         output: a batch of action probabilities and state values
         """
         if self.use_gpu:
-            state_batch = Variable(torch.FloatTensor(state_batch).cuda())
+            state_batch = Variable(torch.FloatTensor(state_batch).to(device))
             log_act_probs, value = self.policy_value_net(state_batch)
             act_probs = np.exp(log_act_probs.data.cpu().numpy())
             return act_probs, value.data.cpu().numpy()
@@ -98,7 +98,7 @@ class PolicyValueNet():
                 -1, 4, self.board_width, self.board_height))
         if self.use_gpu:
             log_act_probs, value = self.policy_value_net(
-                    Variable(torch.from_numpy(current_state)).cuda().float())
+                    Variable(torch.from_numpy(current_state)).to(device).float())
             act_probs = np.exp(log_act_probs.data.cpu().numpy().flatten())
         else:
             log_act_probs, value = self.policy_value_net(
@@ -117,9 +117,9 @@ class PolicyValueNet():
         # self.use_gpu = True
         # wrap in Variable
         if self.use_gpu:
-            state_batch = Variable(torch.FloatTensor(state_batch).cuda())
-            mcts_probs = Variable(torch.FloatTensor(mcts_probs).cuda())
-            winner_batch = Variable(torch.FloatTensor(winner_batch).cuda())
+            state_batch = Variable(torch.FloatTensor(state_batch).to(device))
+            mcts_probs = Variable(torch.FloatTensor(mcts_probs).to(device))
+            winner_batch = Variable(torch.FloatTensor(winner_batch).to(device))
         else:
             state_batch = Variable(torch.FloatTensor(state_batch))
             mcts_probs = Variable(torch.FloatTensor(mcts_probs))

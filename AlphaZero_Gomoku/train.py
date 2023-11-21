@@ -17,12 +17,13 @@ from policy_value_net_pytorch import PolicyValueNet  # Pytorch
 # from policy_value_net_tensorflow import PolicyValueNet # Tensorflow
 # from policy_value_net_keras import PolicyValueNet # Keras
 # import joblib
+from tqdm import tqdm
 
 class TrainPipeline():
     def __init__(self, init_model=None):
         # params of the board and the game
-        self.board_width = 8
-        self.board_height = 8
+        self.board_width = 12
+        self.board_height = 12
         self.n_in_row = 5
         self.board = Board(width=self.board_width,
                            height=self.board_height,
@@ -46,6 +47,7 @@ class TrainPipeline():
         # num of simulations used for the pure mcts, which is used as
         # the opponent to evaluate the trained policy
         self.pure_mcts_playout_num = 200 # 1000 -> 200
+        print("Current Board Size: {}*{}".format(self.board_width,self.board_height))
         if init_model:
             # start training from an initial policy-value net
             self.policy_value_net = PolicyValueNet(self.board_width,
@@ -86,6 +88,7 @@ class TrainPipeline():
 
     def collect_selfplay_data(self, n_games=1):
         """collect self-play data for training"""
+        print("collectind datas")
         for i in range(n_games):
             winner, play_data = self.game.start_self_play(self.mcts_player,
                                                           temp=self.temp)
@@ -97,6 +100,7 @@ class TrainPipeline():
 
     def policy_update(self):
         """update the policy-value net"""
+        print("====updating policy=====")
         mini_batch = random.sample(self.data_buffer, self.batch_size)
         state_batch = [data[0] for data in mini_batch]
         mcts_probs_batch = [data[1] for data in mini_batch]
@@ -152,7 +156,7 @@ class TrainPipeline():
         pure_mcts_player = MCTS_Pure(c_puct=5,
                                      n_playout=self.pure_mcts_playout_num)
         win_cnt = defaultdict(int)
-        for i in range(n_games):
+        for i in tqdm(range(n_games), desc="policy_evaluate", ncols=100):
             
             winner = self.game.start_play(
                                           pure_mcts_player,current_mcts_player,
@@ -169,7 +173,7 @@ class TrainPipeline():
     def run(self):
         """run the training pipeline"""
         try:
-            for i in range(self.game_batch_num):
+            for i in tqdm(range(self.game_batch_num), desc="game_batch_num", ncols=100):
                 self.collect_selfplay_data(self.play_batch_size)
                 print("batch i:{}, episode_len:{}".format(
                         i+1, self.episode_len))
@@ -180,12 +184,12 @@ class TrainPipeline():
                 if (i+1) % self.check_freq == 0:
                     print("current self-play batch: {}".format(i+1))
                     win_ratio = self.policy_evaluate()
-                    self.policy_value_net.save_model('./current_policy.model')
+                    self.policy_value_net.save_model('./current_policy_12_12.model')
                     if win_ratio > self.best_win_ratio:
                         print("New best policy!!!!!!!!")
                         self.best_win_ratio = win_ratio
                         # update the best_policy
-                        self.policy_value_net.save_model('./best_policy.model')
+                        self.policy_value_net.save_model('./best_policy_12_12.model')
                         if (self.best_win_ratio == 1.0 and
                                 self.pure_mcts_playout_num < 5000):
                             self.pure_mcts_playout_num += 1000
@@ -195,6 +199,6 @@ class TrainPipeline():
 
 
 if __name__ == '__main__':
-    training_pipeline = TrainPipeline(init_model=r"C:\Users\li_jiaxin\Desktop\AI3603\BGWH\code\AI_3603_BIGHOME\AlphaZero_Gomoku\best_policy_8_8_5_2torch.pth")
+    training_pipeline = TrainPipeline(init_model=None)
     training_pipeline.run()
     training_pipeline.policy_evaluate()
