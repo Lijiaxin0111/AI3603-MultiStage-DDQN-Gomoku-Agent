@@ -1,3 +1,14 @@
+"""
+FileName: mian_worker.py
+Author: Jiaxin Li
+Create Date: yyyy/mm/dd
+Description: to be completed
+Edit History:
+- 2023/11/21, Tue,  Edited by ljx (li_jiaxin@sjtu.edu.cn)
+    - added the Gumbel_MCST Player, added the option "--Player" 
+"""
+
+
 from __future__ import print_function
 import random
 import numpy as np
@@ -266,9 +277,9 @@ class MainWorker():
 
         for i in range(n_games):
             
-            winner = self.game.start_play(
-                                          pure_mcts_player,current_mcts_player,
+            winner = self.game.start_play(current_mcts_player,pure_mcts_player,
                                           start_player=i % 2,
+                                        # start_player=1,
                                           is_shown=opts.shown)
             win_cnt[winner] += 1
             print(f" {i}_th winner:" , winner)

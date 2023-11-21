@@ -1,9 +1,9 @@
-# -*- coding: utf-8 -*-
 """
-Monte Carlo Tree Search in AlphaGo Zero style, which uses a policy-value
-network to guide the tree search and evaluate the leaf nodes
-
-@author: Junxiao Song
+FileName: mian_worker.py
+Author: Jiaxin Li
+Create Date: 2023/11/2
+Description: The implement of  Gumbel MCST 
+Edit History:
 """
 
 import numpy as np
@@ -47,6 +47,7 @@ class TreeNode(object):
         for action, prob in action_priors:
             if action not in self._children:
                 self._children[action] = TreeNode(self, prob)
+            
 
     def select(self, v_pi):
         """Select action among children that gives maximum 
@@ -57,7 +58,7 @@ class TreeNode(object):
         max_N_b = np.max(np.array( [act_node[1]._n_visits   for act_node in   self._children.items()]))
     
 
-        pi_ = softmax( np.array( [ act_node[1].get_pi(v_pi,max_N_b).detach().numpy()   for act_node in   self._children.items() ])).reshape(len(list(self._children.items())) ,-1)
+        pi_ = softmax( np.array( [ act_node[1].get_pi(v_pi,max_N_b)  for act_node in   self._children.items() ])).reshape(len(list(self._children.items())) ,-1)
         # print(pi_.shape)
         
 
@@ -80,7 +81,7 @@ class TreeNode(object):
         # Count visit.
         self._n_visits += 1
         # Update Q, a running average of values for all visits.
-        self._Q += (1.0*(leaf_value - self._Q) / self._n_visits).detach().numpy()
+        self._Q += (1.0*(leaf_value - self._Q) / self._n_visits)
 
     def update_recursive(self, leaf_value):
         """Like a call to update(), but applied recursively for all ancestors.
@@ -136,40 +137,8 @@ class Gumbel_MCTS(object):
         self._c_puct = c_puct
         self._n_playout = n_playout
 
-    # def _playout(self, state):
-    #     """Run a single playout from the root to the leaf, getting a value at
-    #     the leaf and propagating it back through its parents.
-    #     State is modified in-place, so a copy must be provided.
-    #     """
-    #     node = self._root
-    #     while(1):
-    #         if node.is_leaf():
-    #             break
-    #         # Greedily select next move.
-    #         action, node = node.select(self._c_puct)
-    #         state.do_move(action)
 
-    #     # Evaluate the leaf using a network which outputs a list of
-    #     # (action, probability) tuples p and also a score v in [-1, 1]
-    #     # for the current player.
-    #     action_probs, leaf_value = self._policy(state)
-    #     node._v = leaf_value
-    #     # Check for end of game.
-    #     end, winner = state.game_end()
 
-    #     if not end:
-    #         node.expand(action_probs)
-    #     else:
-    #         # for end state，return the "true" leaf_value
-    #         if winner == -1:  # tie
-    #             leaf_value = 0.0
-    #         else:
-    #             leaf_value = (
-    #                 1.0 if winner == state.get_current_player() else -1.0
-    #             )
-
-    #     # Update value and visit count of nodes in this traversal.
-    #     node.update_recursive(-leaf_value)
 
     def Gumbel_playout(self, child_node, child_state):
         """Run a single playout from the child of the root to the leaf, getting a value at
@@ -184,8 +153,12 @@ class Gumbel_MCTS(object):
             if node.is_leaf():
                 break
             # Greedily select next move.
+
             action, node = node.select(node._v)
+        
             state.do_move(action)
+
+
 
         # Evaluate the leaf using a network which outputs a list of
         # (action, probability) tuples p and also a score v in [-1, 1]
@@ -211,6 +184,7 @@ class Gumbel_MCTS(object):
 
     def top_k(self,x, k):
 
+
         return np.argpartition(x, k)[..., -k:]
 
     def sample_k(self,logits, k):
@@ -228,7 +202,7 @@ class Gumbel_MCTS(object):
         temp: temperature parameter in (0, 1] controls the level of exploration
         """
         # 这里需要修改：1
-        # logits 暂定为 p, σ 暂定为 y = x
+        # logits 暂定为 p
 
         n = self._n_playout
         m = m_action
@@ -236,50 +210,49 @@ class Gumbel_MCTS(object):
         # 对根节点进行拓展
         act_probs, leaf_value = self._policy(state)
         act_probs =  list(act_probs)
+        
         # print(list(act_probs))
         porbs = [prob  for act,prob in (act_probs)]
         self._root.expand(act_probs)
 
-        root_child = self._root._children.items()
-        
 
         # 先进行Gumbel 分布采样，不重复的采样前m个动作，对应选择公式 logits + g
         A_topm ,g = self.sample_k(porbs , m)
         
-        
-
-
         # 获得state选取每个action后对应的状态，保存到一个列表中
+        root_childs = list(self._root._children.items())
+ 
+
         child_state_m = []
         for i in range(m):
             state_copy = copy.deepcopy(state)
-
-            action,node = list(self._root._children.items())[A_topm[i]]
+            action,node = root_childs[A_topm[i]]
             state_copy.do_move(action)
             child_state_m.append(state_copy)
+
            
+        # 每轮对选择的动作进行的仿真次数
+        N = int( n /( np.log(m) * m ))
 
         # 进行sequential halving with Gumbel 
         while m >= 1:
-
-            # 每轮对选择的动作进行的仿真次数
-            N = int( n /( np.log(m) * m ))
-    
-
+        
             # 对每个选择的动作进行仿真
             for i in range(m):
                 action_state = child_state_m[i]
-                action,node = list( self._root._children.items())[A_topm[i]]
+            
+                action,node = root_childs[A_topm[i]]
+            
 
+              
                 for j in range(N):
                     action_state_copy = copy.deepcopy(action_state)
-                
-                    
+        
                     # 对选择动作进行仿真: 即找到这个子树的叶节点，然后再网络中预测v，然后往上回溯的过程
                     self.Gumbel_playout(node, action_state_copy)
 
             # 每轮不重复采样的动作个数减半
-            m /= 2
+            m = m //2
 
             # 不是最后一轮,单轮仿真次数加倍
             if(m != 1):
@@ -291,11 +264,15 @@ class Gumbel_MCTS(object):
             
             # 进行新的一轮不重复采样, 采样在之前的动作前一半的动作, 对应公式 g + logits + \sigma( \hat{q} )
             
-            q_hat = ([action_node[1]._Q for action_node in self._root._children.items()  ])
+            q_hat = np.array([action_node[1]._Q for action_node in self._root._children.items()  ])
+            
 
             assert(np.sum(q_hat[A_topm] == 0) == 0  )
 
-            A_topm = A_topm[self.top_k(act_probs[A_topm] + g[A_topm]  +  q_hat[A_topm]  , m)]
+            A_index = self.top_k( np.array(porbs)[A_topm] +  np.array(g)[A_topm]  +  q_hat[A_topm]  , m)
+            A_topm = np.array(A_topm)[A_index]
+            child_state_m = np.array(child_state_m)[A_index]
+            
         
         # 最后返回对应的决策函数, 即 pi' = softmax(logits + sigma(completed Q))
 
@@ -303,7 +280,7 @@ class Gumbel_MCTS(object):
 
         final_act_probs=    softmax( np.array( [ act_node[1].get_pi(leaf_value, max_N_b)   for act_node in   self._root._children.items() ]))
 
-        return  self._root._children.ietms() [A_topm], final_act_probs
+        return np.array(list(self._root._children.items()))[A_topm][0][0], final_act_probs
 
     def update_with_move(self, last_move):
         """Step forward in the tree, keeping everything we already know
@@ -345,10 +322,14 @@ class Gumbel_MCTSPlayer(object):
         if len(sensible_moves) > 0:
             # 在搜索树中利用sequential halving with Gumbel 来进行动作选择 并且返回对应的决策函数
             move, move_probs = self.mcts.get_move_probs(board, temp,self.m_action)
+            # print(move)
 
-    
+            # 重置搜索树
+            self.mcts.update_with_move(-1)
+        
 
             if return_prob:
+                
                 return move, move_probs
             else:
                 return move

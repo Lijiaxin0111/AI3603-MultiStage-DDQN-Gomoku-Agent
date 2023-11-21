@@ -6,6 +6,10 @@
 ### 任务进度记录：
 
 - 2023-11-19.hbh.
+  - 复现了Gumbel_MCST
+  - 在main_workder里面增加了"--Player" 参数,'0' 为 Alphazero, '1' 为 Gumbel Alphazero 
+
+- 2023-11-19.hbh.
   - 完成了可视化界面的初稿
   
 - 2023-11-18.hbh.
