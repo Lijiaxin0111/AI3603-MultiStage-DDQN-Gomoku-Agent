@@ -52,6 +52,8 @@ parser.add_argument("--distributed",type=bool,default=False)
 # preload_model setting
 parser.add_argument("--preload_model",type=str, default="")
 
+# MCTSPlayer setting
+parser.add_argument("--Player", type=int,default= 0 ,help="the MCTS player:=  0: Alphazero;  1: Gumbel_Alphazero")
 
 # Alphazero  agent setting
 parser.add_argument("--temp", type=float,default= 1.0 ,help="the temperature parameter when calculate the decision function getting the next action")
@@ -63,6 +65,7 @@ parser.add_argument("--pure_mcts_playout_num",type=int, default=200)
 
 # test settings
 parser.add_argument('--test_ckpt', type=str, default=None, help='ckpt absolute path')
+parser.add_argument('--shown', type= int, default = 0,help="show the board in the game: 1: True; 0: False")
 
 
 opts = parser.parse_args()

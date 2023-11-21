@@ -206,7 +206,8 @@ class MCTSPlayer(object):
             move, simul_mean_time = self.mcts.get_move(board)
             self.mcts.update_with_move(-1)
             print("MCTS move:", move)
-            return move, simul_mean_time
+
+            return move
         else:
             print("WARNING: the board is full")
 
