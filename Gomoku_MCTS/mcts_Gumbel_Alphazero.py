@@ -1,7 +1,7 @@
 """
-FileName: mian_worker.py
+FileName: main_worker.py
 Author: Jiaxin Li
-Create Date: 2023/11/2
+Create Date: 2023/11/21
 Description: The implement of  Gumbel MCST 
 Edit History:
 """

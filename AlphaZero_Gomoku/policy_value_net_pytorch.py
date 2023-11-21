@@ -149,7 +149,6 @@ class PolicyValueNet():
                 )
         
    
-        return loss.data[0], entropy.data[0]
         #for pytorch version >= 0.5 please use the following line instead.
         return loss.item(), entropy.item()
 
