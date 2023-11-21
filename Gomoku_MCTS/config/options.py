@@ -54,6 +54,7 @@ parser.add_argument("--preload_model",type=str, default="")
 
 # MCTSPlayer setting
 parser.add_argument("--Player", type=int,default= 0 ,help="the MCTS player:=  0: Alphazero;  1: Gumbel_Alphazero")
+parser.add_argument("--mood", type=int,default= 0 ,help="the test mood:=  0: Alphazero Vs Pure;  1: Gumbel_Alphazero Vs Pure; 2:Alphazero Vs Gumbel_Alphazero  ")
 
 # Alphazero  agent setting
 parser.add_argument("--temp", type=float,default= 1.0 ,help="the temperature parameter when calculate the decision function getting the next action")

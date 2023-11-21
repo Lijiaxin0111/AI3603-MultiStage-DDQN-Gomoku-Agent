@@ -259,6 +259,8 @@ class MainWorker():
         Note: this is only for monitoring the progress of training
         """
 
+        
+
         if opts.Player == 0 :
             current_mcts_player =  MCTSPlayer(self.policy_value_net.policy_value_fn,
                                         c_puct=self.c_puct,
@@ -275,15 +277,62 @@ class MainWorker():
                                      n_playout=self.pure_mcts_playout_num)
         win_cnt = defaultdict(int)
 
+        if opts.split == "test" :
+            #  Alphazero Vs MCTS_Pure
+            if opts.mood == 0:  
+
+                current_mcts_player =  MCTSPlayer(self.policy_value_net.policy_value_fn,
+                                                        c_puct=self.c_puct,
+                                                        n_playout=self.n_playout)
+
+                pure_mcts_player = MCTS_Pure(c_puct=5,n_playout=self.pure_mcts_playout_num)
+                print("[TEST] Alphazero  Vs MCTS_Pure")
+                
+            #  Gumbel_Alphazero Vs MCTS_Pure
+            elif opts.mood == 1:
+                current_mcts_player =  Gumbel_MCTSPlayer(self.policy_value_net.policy_value_fn,
+                                                        c_puct=self.c_puct,
+                                                        n_playout=self.n_playout)
+
+                pure_mcts_player = MCTS_Pure(c_puct=5,n_playout=self.pure_mcts_playout_num)
+                print("[TEST] Gumbel_Alphazero  Vs MCTS_Pure")
+
+            # Alphazero Vs  Gumbel_Alphazero
+            elif opts. mood == 2:
+
+                current_mcts_player =  MCTSPlayer(self.policy_value_net.policy_value_fn,
+                                                        c_puct=self.c_puct,
+                                                        n_playout=self.n_playout)
+      
+
+                pure_mcts_player = Gumbel_MCTSPlayer(self.policy_value_net.policy_value_fn,
+                                                        c_puct=self.c_puct,
+                                                        n_playout=self.n_playout)
+                
+                print("[TEST] Alphazero Vs  Gumbel_Alphazero ")
+            else :
+                print("> error: illegal mood num")
+          
+    
+        
+
+
         for i in range(n_games):
-            
             winner = self.game.start_play(current_mcts_player,pure_mcts_player,
                                           start_player=i % 2,
-                                        # start_player=1,
                                           is_shown=opts.shown)
             win_cnt[winner] += 1
             print(f" {i}_th winner:" , winner)
         win_ratio = 1.0*(win_cnt[1] + 0.5*win_cnt[-1]) / n_games
+
+        if(opts.split == "test"):
+            if(opts.mood == 0):
+                print("[TEST] Alphazero  Vs MCTS_Pure")
+            elif(opts.mood == 1):
+                print("[TEST] Gumbel_Alphazero  Vs MCTS_Pure")
+            elif(opts.mood == 2):
+                print("[TEST] Alphazero Vs  Gumbel_Alphazero ")
+
         print("num_playouts:{}, win: {}, lose: {}, tie:{}".format(
                 self.pure_mcts_playout_num,
                 win_cnt[1], win_cnt[2], win_cnt[-1]))
@@ -362,6 +411,7 @@ if __name__ == "__main__":
         training_pipeline.run()
 
     if get_rank() == 0 and opts.split == "test":
+
         training_pipeline = MainWorker(device)
         training_pipeline.policy_evaluate()
 
