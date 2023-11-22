@@ -11,8 +11,8 @@ parser.add_argument('--savepath', type=str, default="blip_uni_cross_mu", help=''
 
 
 # board settings
-parser.add_argument("--board_width", type=int,default=12)
-parser.add_argument("--board_height", type=int,default=12)
+parser.add_argument("--board_width", type=int,default=15)
+parser.add_argument("--board_height", type=int,default=15)
 parser.add_argument("--n_in_row", type=int,default=5,help="the condition of winning")
 
 
