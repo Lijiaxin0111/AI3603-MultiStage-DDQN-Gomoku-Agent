@@ -245,8 +245,8 @@ class Gumbel_MCTS(object):
 
 
         n = self._n_playout
-        m = min( m_action,len( porbs) /2)
-
+        m = min( m_action, int(len( porbs) /2))
+ 
 
         # 先进行Gumbel 分布采样，不重复的采样前m个动作，对应选择公式 logits + g
         A_topm ,g = self.sample_k(porbs , m)
