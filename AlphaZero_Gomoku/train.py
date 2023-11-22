@@ -162,7 +162,7 @@ class TrainPipeline():
 
         # use former trained model as opponent
         pi_eval = PolicyValueNet(self.board.width, self.board.height,
-                                 model_file='/AlphaZero_Gomoku/checkpoint/epochs=1000_size=9_training1/best_policy.model')
+                                 model_file='/Users/husky/AI_3603_BIGHOME/AlphaZero_Gomoku/checkpoint/epochs=1000_size=9_training1/best_policy.model')
         pure_mcts_player = MCTSPlayer(pi_eval.policy_value_fn,
                                       c_puct=self.c_puct,
                                       n_playout=self.pure_mcts_playout_num,
