@@ -163,9 +163,14 @@ class MainWorker():
 
         # collection_bar = tqdm( range(n_games))
         collection_bar = range(n_games)
-        with Pool(4) as p:
-            play_data = p.map(self.job, collection_bar, chunksize=1)
-        self.data_buffer.extend(play_data)
+        if n_games <= 4:
+            for i in collection_bar:
+                self.data_buffer.extend(self.job(i))
+        else:
+            with Pool(4) as p:
+                play_datas = p.map(self.job, collection_bar)
+            for play_data in play_datas:
+                self.data_buffer.extend(play_data)
         # print('\n', 'data buffer size:', len(self.data_buffer))
 
     def policy_update(self):
