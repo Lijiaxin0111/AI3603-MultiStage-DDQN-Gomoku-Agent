@@ -229,7 +229,7 @@ class Human_Player(object):
         self.player = p
 
 
-    def get_action(self, board):
+    def get_action(self, board, return_time = None):
 
 
         sensible_moves = board.availables
