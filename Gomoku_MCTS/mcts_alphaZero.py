@@ -156,23 +156,23 @@ class MCTS(object):
         start_time_averge = 0
 
         ### test multi-thread
-        # lock = threading.Lock()
-        # with ThreadPoolExecutor(max_workers=4) as executor:
-        #     for n in range(self._n_playout):
-        #         start_time = time.time()
+        lock = threading.Lock()
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            for n in range(self._n_playout):
+                start_time = time.time()
 
-        #         state_copy = copy.deepcopy(state)
-        #         executor.submit(self._playout, state_copy, lock)
-        #         start_time_averge += (time.time() - start_time)
+                state_copy = copy.deepcopy(state)
+                executor.submit(self._playout, state_copy, lock)
+                start_time_averge += (time.time() - start_time)
         ### end test multi-thread
 
         # t = time.time()
-        for n in range(self._n_playout):
-            start_time = time.time()
+        # for n in range(self._n_playout):
+        #     start_time = time.time()
 
-            state_copy = copy.deepcopy(state)
-            self._playout(state_copy)
-            start_time_averge += (time.time() - start_time)
+        #     state_copy = copy.deepcopy(state)
+        #     self._playout(state_copy)
+        #     start_time_averge += (time.time() - start_time)
         # print('!!time!!:', time.time() - t)
         
         # print(f" My MCTS sum_time: {start_time_averge }, total_simulation: {self._n_playout}")

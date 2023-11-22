@@ -24,7 +24,6 @@ class Net(nn.Module):
 
         self.board_width = board_width
         self.board_height = board_height
-        board_height = board_width = self.board_height
         # common layers
         self.conv1 = nn.Conv2d(4, 32, kernel_size=3, padding=1)
         self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
@@ -37,33 +36,6 @@ class Net(nn.Module):
         self.val_conv1 = nn.Conv2d(128, 2, kernel_size=1)
         self.val_fc1 = nn.Linear(2*board_width*board_height, 64)
         self.val_fc2 = nn.Linear(64, 1)
-
-    def reshape_linear(self):
-        """
-        if board_width and board_height != 8, then reshape self.act_fc1 and self.val_fc1, this is because the model we load is for board_size 8 * 8
-        use some methods which is simlar to enlarge an image wihout losing much information (Super High Resolution)
-        for example, before reshaping, self.act_fc1 = nn.Linear(4*8*8, 8*8)
-        after reshaping, it becomes nn.Linear(4*board_width*board_height,
-                                 board_width*board_height)
-        the same for self.val_fc1
-        """
-        if (self.board_width == 8) and (self.board_height == 8):
-            return
-        # 假设原始尺寸是 8x8
-        original_size = 8 * 8
-        new_size = self.board_width * self.board_height
-
-        # 调整 self.act_fc1
-        original_weight = self.act_fc1.weight.data.view(1, 1, 64, 256)
-        new_weight = F.interpolate(original_weight, size=( 4 * new_size, new_size), mode='bilinear', align_corners=False)
-        self.act_fc1 = nn.Linear(4 * new_size, new_size)
-        self.act_fc1.weight.data = new_weight.view(new_size, 4 * new_size)
-
-        # 调整 self.val_fc1
-        original_weight = self.val_fc1.weight.data.view(1, 1, 2 * 64, 64)
-        new_weight = F.interpolate(original_weight, size=(2 * new_size, 64), mode='bilinear', align_corners=False)
-        self.val_fc1 = nn.Linear(2 * new_size, 64)
-        self.val_fc1.weight.data = new_weight.view( 64,2 * new_size)
 
     def forward(self, state_input):
         # common layers
@@ -99,7 +71,6 @@ class PolicyValueNet():
         if model_file:
             net_params = torch.load(model_file)
             self.policy_value_net.load_state_dict(net_params)
-            # self.policy_value_net.reshape_linear()
 
     def policy_value(self, state_batch):
         """

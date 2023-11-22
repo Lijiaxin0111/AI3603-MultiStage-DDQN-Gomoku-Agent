@@ -5,7 +5,6 @@ from collections import defaultdict, deque
 from game import Board, Game
 from mcts_pure import MCTSPlayer as MCTS_Pure
 from mcts_alphaZero import MCTSPlayer
-from mcts_Gumbel_Alphazero import Gumbel_MCTSPlayer
 import torch.optim as optim
 # from policy_value_net import PolicyValueNet  # Theano and Lasagne
 # from policy_value_net_pytorch import PolicyValueNet  # Pytorch
@@ -16,9 +15,10 @@ from dueling_net import PolicyValueNet
 from torch.autograd import Variable
 import torch.nn.functional as F
 
+
 from config.options import *
 import sys
-from config.utils import *
+from config.utils  import *
 from torch.backends import cudnn
 
 import torch
@@ -28,12 +28,10 @@ from torch.utils.tensorboard import SummaryWriter
 
 from multiprocessing import Pool
 
-
 def set_learning_rate(optimizer, lr):
     """Sets the learning rate to the given value"""
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
-
 
 def std_log():
     if get_rank() == 0:
@@ -45,15 +43,17 @@ def std_log():
 def init_seeds(seed, cuda_deterministic=True):
     torch.manual_seed(seed)
     if cuda_deterministic:  # slower, more reproducible
-        cudnn.deterministic = True
-        cudnn.benchmark = False
+       cudnn.deterministic = True
+       cudnn.benchmark = False
     else:  # faster, less reproducible
-        cudnn.deterministic = False
-        cudnn.benchmark = True
+       cudnn.deterministic = False
+       cudnn.benchmark = True
+
+
 
 
 class MainWorker():
-    def __init__(self, device):
+    def __init__(self,device):
 
         #--- init the set of pipeline -------
         self.board_width = opts.board_width
@@ -61,20 +61,20 @@ class MainWorker():
         self.n_in_row = opts.n_in_row
         self.learn_rate = opts.learn_rate
         self.lr_multiplier = opts.lr_multiplier
-        self.temp = opts.temp
-        self.n_playout = opts.n_playout
+        self.temp = opts.temp 
+        self.n_playout = opts.n_playout  
         self.c_puct = opts.c_puct
         self.buffer_size = opts.buffer_size
-        self.batch_size = opts.batch_size
+        self.batch_size = opts.batch_size  
         self.play_batch_size = opts.play_batch_size
-        self.epochs = opts.epochs
+        self.epochs = opts.epochs 
         self.kl_targ = opts.kl_targ
         self.check_freq = opts.check_freq
         self.game_batch_num = opts.game_batch_num 
         self.pure_mcts_playout_num = opts.pure_mcts_playout_num
 
         self.device = device
-        self.use_gpu = opts.use_gpu
+        self.use_gpu = torch.device("cuda") ==  self.device
 
         self.board = Board(width=self.board_width,
                            height=self.board_height,
@@ -101,20 +101,10 @@ class MainWorker():
             self.policy_value_net = PolicyValueNet(self.board_width,
                                                    self.board_height,
                                                    use_gpu=(self.device == "cuda"))
-
-        if opts.Player == 0:
-            self.mcts_player = MCTSPlayer(self.policy_value_net.policy_value_fn,
-                                        c_puct=self.c_puct,
-                                        n_playout=self.n_playout,
-                                        is_selfplay=1)
-            print("[Now] The MCTS PLATER: Alphazero ")
-        elif opts.Player == 1:
-            self.mcts_player = Gumbel_MCTSPlayer(self.policy_value_net.policy_value_fn,
-                                        c_puct=self.c_puct,
-                                        n_playout=self.n_playout,
-                                        is_selfplay=1)
-            print("[Now] The MCTS PLATER: Gumbel_Alphazero ")
-
+        self.mcts_player = MCTSPlayer(self.policy_value_net.policy_value_fn,
+                                      c_puct=self.c_puct,
+                                      n_playout=self.n_playout,
+                                      is_selfplay=1)
         
         # The set of optimizer
         self.optimizer = optim.Adam(self.policy_value_net.policy_value_net.parameters(),
@@ -163,14 +153,9 @@ class MainWorker():
 
         # collection_bar = tqdm( range(n_games))
         collection_bar = range(n_games)
-        if n_games <= 4:
-            for i in collection_bar:
-                self.data_buffer.extend(self.job(i))
-        else:
-            with Pool(4) as p:
-                play_datas = p.map(self.job, collection_bar)
-            for play_data in play_datas:
-                self.data_buffer.extend(play_data)
+        with Pool(4) as p:
+            play_data = p.map(self.job, collection_bar, chunksize=1)
+        self.data_buffer.extend(play_data)
         # print('\n', 'data buffer size:', len(self.data_buffer))
 
     def policy_update(self):
@@ -242,91 +227,33 @@ class MainWorker():
                              np.var(np.array(winner_batch)))
         
 
-        return kl, loss, entropy, explained_var_old, explained_var_new
+    
+
+        return   kl,  loss, entropy,explained_var_old, explained_var_new
 
     def policy_evaluate(self, n_games=10):
         """
         Evaluate the trained policy by playing against the pure MCTS player
         Note: this is only for monitoring the progress of training
         """
-
-
-
-        if opts.Player == 0 :
-            current_mcts_player =  MCTSPlayer(self.policy_value_net.policy_value_fn,
-                                        c_puct=self.c_puct,
-                                        n_playout=self.n_playout)
-            print("[TEST] The MCTS PLATER: Alphazero ")
-        elif opts.Player == 1:
-            current_mcts_player =  Gumbel_MCTSPlayer(self.policy_value_net.policy_value_fn,
-                                        c_puct=self.c_puct,
-                                        n_playout=self.n_playout)
-            print("[TEST] The MCTS PLATER: Gumbel_Alphazero ")
-
-
+        current_mcts_player = MCTSPlayer(self.policy_value_net.policy_value_fn,
+                                         c_puct=self.c_puct,
+                                         n_playout=self.n_playout)
         pure_mcts_player = MCTS_Pure(c_puct=5,
                                      n_playout=self.pure_mcts_playout_num)
         win_cnt = defaultdict(int)
-
-        if opts.split == "test" :
-            #  Alphazero Vs MCTS_Pure
-            if opts.mood == 0:
-
-                current_mcts_player =  MCTSPlayer(self.policy_value_net.policy_value_fn,
-                                                        c_puct=self.c_puct,
-                                                        n_playout=self.n_playout)
-
-                pure_mcts_player = MCTS_Pure(c_puct=5,n_playout=self.pure_mcts_playout_num)
-                print("[TEST] Alphazero  Vs MCTS_Pure")
-
-            #  Gumbel_Alphazero Vs MCTS_Pure
-            elif opts.mood == 1:
-                current_mcts_player =  Gumbel_MCTSPlayer(self.policy_value_net.policy_value_fn,
-                                                        c_puct=self.c_puct,
-                                                        n_playout=self.n_playout)
-
-                pure_mcts_player = MCTS_Pure(c_puct=5,n_playout=self.pure_mcts_playout_num)
-                print("[TEST] Gumbel_Alphazero  Vs MCTS_Pure")
-
-            # Alphazero Vs  Gumbel_Alphazero
-            elif opts. mood == 2:
-
-                current_mcts_player =  MCTSPlayer(self.policy_value_net.policy_value_fn,
-                                                        c_puct=self.c_puct,
-                                                        n_playout=self.n_playout)
-
-
-                pure_mcts_player = Gumbel_MCTSPlayer(self.policy_value_net.policy_value_fn,
-                                                        c_puct=self.c_puct,
-                                                        n_playout=self.n_playout)
-
-                print("[TEST] Alphazero Vs  Gumbel_Alphazero ")
-            else :
-                print("> error: illegal mood num")
-
-
-
-
-
         for i in range(n_games):
-            winner = self.game.start_play(current_mcts_player,pure_mcts_player,
+            
+            winner = self.game.start_play(
+                                          pure_mcts_player,current_mcts_player,
                                           start_player=i % 2,
-                                          is_shown=opts.shown)
+                                          is_shown=0)
             win_cnt[winner] += 1
             print(f" {i}_th winner:" , winner)
         win_ratio = 1.0*(win_cnt[1] + 0.5*win_cnt[-1]) / n_games
-
-        if(opts.split == "test"):
-            if(opts.mood == 0):
-                print("[TEST] Alphazero  Vs MCTS_Pure")
-            elif(opts.mood == 1):
-                print("[TEST] Gumbel_Alphazero  Vs MCTS_Pure")
-            elif(opts.mood == 2):
-                print("[TEST] Alphazero Vs  Gumbel_Alphazero ")
-
         print("num_playouts:{}, win: {}, lose: {}, tie:{}".format(
-            self.pure_mcts_playout_num,
-            win_cnt[1], win_cnt[2], win_cnt[-1]))
+                self.pure_mcts_playout_num,
+                win_cnt[1], win_cnt[2], win_cnt[-1]))
         return win_ratio
 
     def run(self):
@@ -403,5 +330,5 @@ if __name__ == "__main__":
 
     if get_rank() == 0 and opts.split == "test":
         training_pipeline = MainWorker(device)
-        training_pipeline.policy_evaluate()
+        training_pipeline.policy_value_net()
 

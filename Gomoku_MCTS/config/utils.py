@@ -8,7 +8,7 @@ import time
 """ ==================== Save ======================== """
 
 def make_path():
-    return "epochs={}_size={}".format(opts.game_batch_num, opts.board_width)
+    return "{}_{}_bs{}_lr{}".format(opts.expri,opts.savepath,opts.batch_size,opts.learn_rate)
 
 
 
