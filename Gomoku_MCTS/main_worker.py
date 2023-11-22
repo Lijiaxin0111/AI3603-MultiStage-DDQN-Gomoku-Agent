@@ -358,12 +358,12 @@ class MainWorker():
                     writer.add_scalar("evaluate/explained_var_new ", win_ratio ,i)
                     batch_bar.set_postfix(loss= loss, entropy= entropy,win_ratio =win_ratio)
 
-                    save_model(self.policy_value_net,"current_policy.model")
+                    save_model(self.policy_value_net.policy_value_net,"current_policy.model")
                     if win_ratio > self.best_win_ratio:
                         print("New best policy!!!!!!!!")
                         self.best_win_ratio = win_ratio
                         # update the best_policy
-                        save_model(self.policy_value_net,"best_policy.model")
+                        save_model(self.policy_value_net.policy_value_net,"best_policy.model")
                         if (self.best_win_ratio == 1.0 and
                                 self.pure_mcts_playout_num < 5000):
                             self.pure_mcts_playout_num += 1000
