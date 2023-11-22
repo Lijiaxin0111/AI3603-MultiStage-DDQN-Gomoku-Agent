@@ -144,8 +144,11 @@ class MainWorker():
         extend_data = []
         for state, mcts_porb, winner in play_data:
             for i in [1, 2, 3, 4]:
+                print(np.array(state).shape)
+                
                 # rotate counterclockwise
                 equi_state = np.array([np.rot90(s, i) for s in state])
+                print(mcts_porb.shape)
                 equi_mcts_prob = np.rot90(np.flipud(
                     mcts_porb.reshape(self.board_height, self.board_width)), i)
                 extend_data.append((equi_state,
@@ -164,8 +167,12 @@ class MainWorker():
         player = self.mcts_player
         winner, play_data = game.start_self_play(player,
                                                     temp=self.temp)
+
         play_data = list(play_data)[:]
+        print(len(play_data))
+        print(play_data)
         play_data = self.get_equi_data(play_data)
+        print(play_data.shape)
 
         return play_data
 
@@ -175,8 +182,10 @@ class MainWorker():
 
         # collection_bar = tqdm( range(n_games))
         collection_bar = range(n_games)
-        with Pool(4) as p:
+        with Pool(1) as p:
+            print("DOING")
             play_data = p.map(self.job, collection_bar, chunksize=1)
+       
         self.data_buffer.extend(play_data)
         # print('\n', 'data buffer size:', len(self.data_buffer))
 
@@ -345,7 +354,7 @@ class MainWorker():
             batch_bar = tqdm(range(self.game_batch_num))
             for i in batch_bar:
                 self.collect_selfplay_data(self.play_batch_size)
-
+                print("Done")
                 if len(self.data_buffer) > self.batch_size:
                     kl,  loss, entropy,explained_var_old, explained_var_new = self.policy_update()
 

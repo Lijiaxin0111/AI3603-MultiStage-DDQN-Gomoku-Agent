@@ -243,8 +243,6 @@ class Gumbel_MCTS(object):
             
                 action,node = root_childs[A_topm[i]]
             
-
-              
                 for j in range(N):
                     action_state_copy = copy.deepcopy(action_state)
         

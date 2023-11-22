@@ -53,7 +53,7 @@ parser.add_argument("--distributed",type=bool,default=False)
 parser.add_argument("--preload_model",type=str, default="")
 
 # MCTSPlayer setting
-parser.add_argument("--Player", type=int,default= 0 ,help="the MCTS player:=  0: Alphazero;  1: Gumbel_Alphazero")
+parser.add_argument("--Player", type=int,default= 0 ,help="the player set:=  0: Alphazero ;  1: Gumbel_Alphazero ")
 parser.add_argument("--mood", type=int,default= 0 ,help="the test mood:=  0: Alphazero Vs Pure;  1: Gumbel_Alphazero Vs Pure; 2:Alphazero Vs Gumbel_Alphazero  ")
 
 # Alphazero  agent setting
