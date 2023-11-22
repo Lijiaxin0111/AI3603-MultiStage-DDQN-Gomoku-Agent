@@ -157,8 +157,16 @@ class TrainPipeline():
         current_mcts_player = MCTSPlayer(self.policy_value_net.policy_value_fn,
                                          c_puct=self.c_puct,
                                          n_playout=self.n_playout)
-        pure_mcts_player = MCTS_Pure(c_puct=5,
-                                     n_playout=self.pure_mcts_playout_num)
+        # pure_mcts_player = MCTS_Pure(c_puct=5,
+        #                              n_playout=self.pure_mcts_playout_num)
+
+        # use former trained model as opponent
+        pi_eval = PolicyValueNet(self.board.width, self.board.height,
+                                 model_file='/AlphaZero_Gomoku/checkpoint/epochs=1000_size=9_training1/best_policy.model')
+        pure_mcts_player = MCTSPlayer(pi_eval.policy_value_fn,
+                                      c_puct=self.c_puct,
+                                      n_playout=self.pure_mcts_playout_num,
+                                      is_selfplay=0)
         win_cnt = defaultdict(int)
         for i in tqdm(range(n_games), desc="policy_evaluate", ncols=100):
             winner = self.game.start_play(
@@ -216,6 +224,6 @@ class TrainPipeline():
 
 if __name__ == '__main__':
     writer = visualizer()
-    training_pipeline = TrainPipeline(init_model=None)
+    training_pipeline = TrainPipeline(init_model="/Users/husky/AI_3603_BIGHOME/AlphaZero_Gomoku/checkpoint/epochs=1000_size=9_training1/best_policy.model")
     training_pipeline.run()
     training_pipeline.policy_evaluate()
