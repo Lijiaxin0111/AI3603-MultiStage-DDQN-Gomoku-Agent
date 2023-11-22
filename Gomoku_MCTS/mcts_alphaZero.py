@@ -156,35 +156,39 @@ class MCTS(object):
         start_time_averge = 0
 
         ### test multi-thread
-        lock = threading.Lock()
-        with ThreadPoolExecutor(max_workers=4) as executor:
-            for n in range(self._n_playout):
-                start_time = time.time()
+        # lock = threading.Lock()
+        # with ThreadPoolExecutor(max_workers=4) as executor:
+        #     for n in range(self._n_playout):
+        #         start_time = time.time()
 
-                state_copy = copy.deepcopy(state)
-                executor.submit(self._playout, state_copy, lock)
-                start_time_averge += (time.time() - start_time)
+        #         state_copy = copy.deepcopy(state)
+        #         executor.submit(self._playout, state_copy, lock)
+        #         start_time_averge += (time.time() - start_time)
         ### end test multi-thread
 
-        # t = time.time()
-        # for n in range(self._n_playout):
-        #     start_time = time.time()
+        t = time.time()
+        for n in range(self._n_playout):
+            start_time = time.time()
 
-        #     state_copy = copy.deepcopy(state)
-        #     self._playout(state_copy)
-        #     start_time_averge += (time.time() - start_time)
+            state_copy = copy.deepcopy(state)
+            self._playout(state_copy)
+            start_time_averge += (time.time() - start_time)
+        total_time = time.time() - t
         # print('!!time!!:', time.time() - t)
         
-        # print(f" My MCTS sum_time: {start_time_averge }, total_simulation: {self._n_playout}")
+        print(f" My MCTS sum_time: {total_time }, total_simulation: {self._n_playout}")
 
 
         # calc the move probabilities based on visit counts at the root node
         act_visits = [(act, node._n_visits)
                       for act, node in self._root._children.items()]
+   
         acts, visits = zip(*act_visits)
+     
         act_probs = softmax(1.0/temp * np.log(np.array(visits) + 1e-10))
 
-        return acts, act_probs
+
+        return 0, acts, act_probs, total_time
 
     def update_with_move(self, last_move):
         """Step forward in the tree, keeping everything we already know
@@ -214,12 +218,12 @@ class MCTSPlayer(object):
     def reset_player(self):
         self.mcts.update_with_move(-1)
 
-    def get_action(self, board, temp=1e-3, return_prob=0):
+    def get_action(self, board, temp=1e-3, return_prob=0,return_time = False):
         sensible_moves = board.availables
         # the pi vector returned by MCTS as in the alphaGo Zero paper
         move_probs = np.zeros(board.width*board.height)
         if len(sensible_moves) > 0:
-            acts, probs = self.mcts.get_move_probs(board, temp)
+            _, acts, probs, simul_mean_time = self.mcts.get_move_probs(board, temp)
             move_probs[list(acts)] = probs
             if self._is_selfplay:
                 # add Dirichlet Noise for exploration (needed for
@@ -238,11 +242,22 @@ class MCTSPlayer(object):
                 self.mcts.update_with_move(-1)
 #                location = board.move_to_location(move)
 #                print("AI move: %d,%d\n" % (location[0], location[1]))
+      
 
-            if return_prob:
-                return move, move_probs
+            if return_time:
+
+                if return_prob:
+                    
+                    return move, move_probs,simul_mean_time
+                else:
+                    return move,simul_mean_time
             else:
-                return move
+
+                if return_prob:
+                    
+                    return move, move_probs
+                else:
+                    return move
         else:
             print("WARNING: the board is full")
 

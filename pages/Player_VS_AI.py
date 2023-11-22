@@ -270,7 +270,7 @@ def gomoku():
     def draw_board(response: bool):
         """construct each buttons for all cells of the board"""
         if session_state.USE_AIAID:
-            acts, probs = session_state.ROOM.MCTS.mcts.get_move_probs(session_state.ROOM.BOARD)
+            _, acts, probs, simul_mean_time = session_state.ROOM.MCTS.mcts.get_move_probs(session_state.ROOM.BOARD)
             sorted_acts_probs = sorted(zip(acts, probs), key=lambda x: x[1], reverse=True)
             top_five_acts = [act for act, prob in sorted_acts_probs[:5]]
             top_five_probs = [prob for act, prob in sorted_acts_probs[:5]]
@@ -294,8 +294,6 @@ def gomoku():
                     else:
                         if session_state.USE_AIAID and i * _BOARD_SIZE + j in top_five_acts:
                             # enable click for other cells available for human choices
-                            # import pdb
-                            # pdb.set_trace()
                             prob = top_five_probs[top_five_acts.index(i * _BOARD_SIZE + j)]
                             BOARD_PLATE[i][j].button(
                                 _PLAYER_SYMBOL[cell] + f"({round(prob, 2)})",
@@ -320,9 +318,8 @@ def gomoku():
                 print("AI's turn")
                 print("Below are current board under AI's view")
                 print(session_state.ROOM.BOARD.board_map)
-                # move, simul_time = session_state.ROOM.MCTS.get_action(session_state.ROOM.BOARD)
-                move = session_state.ROOM.MCTS.get_action(session_state.ROOM.BOARD)
-                # session_state.ROOM.simula_time_list.append(simul_time)
+                move, simul_time = session_state.ROOM.MCTS.get_action(session_state.ROOM.BOARD, return_time=True)
+                session_state.ROOM.simula_time_list.append(simul_time)
                 print("AI takes move: ", move)
                 session_state.ROOM.current_move = move
                 gpt_response = move
@@ -352,8 +349,6 @@ def gomoku():
                         else:
                             if session_state.USE_AIAID and i * _BOARD_SIZE + j in top_five_acts:
                                 # enable click for other cells available for human choices
-                                # import pdb
-                                # pdb.set_trace()
                                 prob = top_five_probs[top_five_acts.index(i * _BOARD_SIZE + j)]
                                 BOARD_PLATE[i][j].button(
                                     _PLAYER_SYMBOL[cell] + f"({round(prob, 2)})",
@@ -371,14 +366,9 @@ def gomoku():
                                 )
 
 
-            # message.markdown(
-            #     'AI agent has calculated its strategy, which takes <span style="color: blue; font-size: 20px;">{:.3e}</span>s per simulation.'.format(
-            #         simul_time),
-            #     unsafe_allow_html=True
-            # )
             message.markdown(
                 'AI agent has calculated its strategy, which takes <span style="color: blue; font-size: 20px;">{:.3e}</span>s per simulation.'.format(
-                    0.0),
+                    simul_time),
                 unsafe_allow_html=True
             )
             LOG.subheader("Logs")
@@ -403,8 +393,6 @@ def gomoku():
             for i, row in enumerate(session_state.ROOM.BOARD.board_map):
                 for j, cell in enumerate(row):
                     if session_state.USE_AIAID and i * _BOARD_SIZE + j in top_five_acts:
-                        # import pdb
-                        # pdb.set_trace()
                         prob = top_five_probs[top_five_acts.index(i * _BOARD_SIZE + j)]
                         BOARD_PLATE[i][j].write(
                             _PLAYER_SYMBOL[cell] + f"({round(prob, 2)})",
