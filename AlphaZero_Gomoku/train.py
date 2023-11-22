@@ -39,14 +39,14 @@ class TrainPipeline():
         self.temp = 1.0  # the temperature param
         self.n_playout = 200  # num of simulations for each move 400 -> 200
         self.c_puct = 5
-        self.buffer_size = 10000
-        self.batch_size = 512  # mini-batch size for training
+        self.buffer_size = opts.buffer_size
+        self.batch_size = opts.batch_size  # mini-batch size for training
         self.data_buffer = deque(maxlen=self.buffer_size)  # !
-        self.play_batch_size = 1
-        self.epochs = 5  # num of train_steps for each update
+        self.play_batch_size = opts.play_batch_size
+        self.epochs = opts.epochs  # num of train_steps for each update
         self.kl_targ = 0.02
-        self.check_freq = 50
-        self.game_batch_num = 1500
+        self.check_freq = opts.check_freq
+        self.game_batch_num = opts.game_batch_num
         self.best_win_ratio = 0.0  # !
         # num of simulations used for the pure mcts, which is used as
         # the opponent to evaluate the trained policy
@@ -162,7 +162,7 @@ class TrainPipeline():
 
         # use former trained model as opponent
         pi_eval = PolicyValueNet(self.board.width, self.board.height,
-                                 model_file='/Users/husky/AI_3603_BIGHOME/AlphaZero_Gomoku/checkpoint/epochs=1000_size=9_training1/best_policy.model')
+                                 model_file=opts.preload_model)
         pure_mcts_player = MCTSPlayer(pi_eval.policy_value_fn,
                                       c_puct=self.c_puct,
                                       n_playout=self.pure_mcts_playout_num,
@@ -224,6 +224,6 @@ class TrainPipeline():
 
 if __name__ == '__main__':
     writer = visualizer()
-    training_pipeline = TrainPipeline(init_model="/Users/husky/AI_3603_BIGHOME/AlphaZero_Gomoku/checkpoint/epochs=1000_size=9_training1/best_policy.model")
+    training_pipeline = TrainPipeline(init_model=opts.preload_model)
     training_pipeline.run()
     training_pipeline.policy_evaluate()

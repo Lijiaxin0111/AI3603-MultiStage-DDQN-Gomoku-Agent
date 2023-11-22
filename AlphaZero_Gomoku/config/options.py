@@ -44,8 +44,8 @@ parser.add_argument("--batch_size",type=int,default=512) #512
 parser.add_argument("--play_batch_size",type=int, default=1,help="The time of selfplaying when collect the data")
 parser.add_argument("--epochs",type=int,default= 5,help="num of train_steps for each update") # 5
 parser.add_argument("--kl_targ",type=float,default=0.02,help="the target kl distance between the old decision function and the new decision function ")
-parser.add_argument("--check_freq",type=int,default=10,help='the frequence of the checking the win ratio when training')
-parser.add_argument("--game_batch_num",type=int,default=1000,help =  "the total training times") #1500
+parser.add_argument("--check_freq",type=int,default=50,help='the frequence of the checking the win ratio when training')
+parser.add_argument("--game_batch_num",type=int,default=1500,help =  "the total training times") #1500
 
 
 # parser.add_argument("--l2_const",type=float,default=1e-4,help=" coef of l2 penalty")
