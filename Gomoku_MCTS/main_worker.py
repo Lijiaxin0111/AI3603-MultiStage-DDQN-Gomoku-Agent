@@ -391,7 +391,8 @@ if __name__ == "__main__":
         init_seeds(opts.seed + local_rank)
         
     else:
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        device = opts.device
         init_seeds(opts.seed)
 
     print("seed: ",opts.seed )
