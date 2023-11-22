@@ -269,7 +269,7 @@ def gomoku():
     # Draw board
     def draw_board(response: bool):
         """construct each buttons for all cells of the board"""
-        if session_state.USE_AIAID:
+        if session_state.USE_AIAID and session_state.ROOM.WINNER == _BLANK:
             _, acts, probs, simul_mean_time = session_state.ROOM.MCTS.mcts.get_move_probs(session_state.ROOM.BOARD)
             sorted_acts_probs = sorted(zip(acts, probs), key=lambda x: x[1], reverse=True)
             top_five_acts = [act for act, prob in sorted_acts_probs[:5]]
@@ -392,17 +392,10 @@ def gomoku():
             print("Game over")
             for i, row in enumerate(session_state.ROOM.BOARD.board_map):
                 for j, cell in enumerate(row):
-                    if session_state.USE_AIAID and i * _BOARD_SIZE + j in top_five_acts:
-                        prob = top_five_probs[top_five_acts.index(i * _BOARD_SIZE + j)]
-                        BOARD_PLATE[i][j].write(
-                            _PLAYER_SYMBOL[cell] + f"({round(prob, 2)})",
-                            key=f"{i}:{j}",
-                        )
-                    else:
-                        BOARD_PLATE[i][j].write(
-                            _PLAYER_SYMBOL[cell],
-                            key=f"{i}:{j}",
-                        )
+                    BOARD_PLATE[i][j].write(
+                        _PLAYER_SYMBOL[cell],
+                        key=f"{i}:{j}",
+                    )
 
     # Game process control
     def game_control():
