@@ -200,7 +200,7 @@ class MCTSPlayer(object):
     def reset_player(self):
         self.mcts.update_with_move(-1)
 
-    def get_action(self, board, return_time = True):
+    def get_action(self, board, return_time = False):
         sensible_moves = board.availables
         if len(sensible_moves) > 0:
             move, simul_mean_time = self.mcts.get_move(board)

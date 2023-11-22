@@ -4,11 +4,16 @@ Author: Jiaxin Li
 Create Date: 2023/11/21
 Description: The implement of  Gumbel MCST 
 Edit History:
+Debug: the dim of output: probs
 """
 
 import numpy as np
 import copy
 import time 
+
+from config.options import *
+import sys
+from config.utils import *
 
 
 def softmax(x):
@@ -54,11 +59,19 @@ class TreeNode(object):
         (pi'(a) - N(a) \ (1 + \sum_b N(b)))
         Return: A tuple of (action, next_node)
         """
+        # if opts.split == "train":
+        #     v_pi = v_pi.detach().numpy()
+        # print(v_pi)
+        
+
+        
 
         max_N_b = np.max(np.array( [act_node[1]._n_visits   for act_node in   self._children.items()]))
-    
 
-        pi_ = softmax( np.array( [ act_node[1].get_pi(v_pi,max_N_b)  for act_node in   self._children.items() ])).reshape(len(list(self._children.items())) ,-1)
+        if opts.split == "train":
+            pi_ = softmax( np.array( [ act_node[1].get_pi(v_pi,max_N_b)  for act_node in   self._children.items() ])).reshape(len(list(self._children.items())) ,-1)
+        else:
+            pi_ = softmax( np.array( [ act_node[1].get_pi(v_pi,max_N_b) for act_node in   self._children.items() ])).reshape(len(list(self._children.items())) ,-1)
         # print(pi_.shape)
         
 
@@ -81,7 +94,12 @@ class TreeNode(object):
         # Count visit.
         self._n_visits += 1
         # Update Q, a running average of values for all visits.
-        self._Q += (1.0*(leaf_value - self._Q) / self._n_visits)
+        if opts.split == "train":
+            self._Q = self._Q +  (1.0*(leaf_value  - self._Q ) / self._n_visits)
+         
+            
+        else: 
+            self._Q += (1.0*(leaf_value - self._Q) / self._n_visits)
 
     def update_recursive(self, leaf_value):
         """Like a call to update(), but applied recursively for all ancestors.
@@ -164,7 +182,13 @@ class Gumbel_MCTS(object):
         # (action, probability) tuples p and also a score v in [-1, 1]
         # for the current player.
         action_probs, leaf_value = self._policy(state)
+    
+        leaf_value = leaf_value.detach().numpy()[0][0]
+
         node._v = leaf_value
+    
+
+
         # Check for end of game.
         end, winner = state.game_end()
         if not end:
@@ -183,13 +207,15 @@ class Gumbel_MCTS(object):
    
 
     def top_k(self,x, k):
-
+        # print("x",x.shape)
+        # print("k ", k)
 
         return np.argpartition(x, k)[..., -k:]
 
     def sample_k(self,logits, k):
         u = np.random.uniform(size=np.shape(logits))
         z = -np.log(-np.log(u))
+
   
         
         return self.top_k(logits + z, k),z
@@ -204,16 +230,22 @@ class Gumbel_MCTS(object):
         # 这里需要修改：1
         # logits 暂定为 p
 
-        n = self._n_playout
-        m = m_action
+        start_time = time.time()
+
 
         # 对根节点进行拓展
         act_probs, leaf_value = self._policy(state)
         act_probs =  list(act_probs)
+
+        leaf_value = leaf_value.detach().numpy()[0][0]
         
         # print(list(act_probs))
         porbs = [prob  for act,prob in (act_probs)]
         self._root.expand(act_probs)
+
+
+        n = self._n_playout
+        m = min( m_action,len( porbs) /2)
 
 
         # 先进行Gumbel 分布采样，不重复的采样前m个动作，对应选择公式 logits + g
@@ -243,8 +275,6 @@ class Gumbel_MCTS(object):
             
                 action,node = root_childs[A_topm[i]]
             
-
-              
                 for j in range(N):
                     action_state_copy = copy.deepcopy(action_state)
         
@@ -263,7 +293,9 @@ class Gumbel_MCTS(object):
                 N = n
             
             # 进行新的一轮不重复采样, 采样在之前的动作前一半的动作, 对应公式 g + logits + \sigma( \hat{q} )
+            # print([action_node[1]._Q for action_node in self._root._children.items()  ])
             
+       
             q_hat = np.array([action_node[1]._Q for action_node in self._root._children.items()  ])
             
 
@@ -279,8 +311,12 @@ class Gumbel_MCTS(object):
         max_N_b = np.max(np.array( [act_node[1]._n_visits   for act_node in   self._root._children.items()]  ))
 
         final_act_probs=    softmax( np.array( [ act_node[1].get_pi(leaf_value, max_N_b)   for act_node in   self._root._children.items() ]))
+        action =  ( np.array( [ act_node[0]   for act_node in   self._root._children.items() ]))
 
-        return np.array(list(self._root._children.items()))[A_topm][0][0], final_act_probs
+        need_time = time.time() - start_time
+        print(f" Gumbel Alphazero sum_time: {need_time  }, total_simulation: {self._n_playout}")
+
+        return   np.array(list(self._root._children.items()))[A_topm][0][0], action,  final_act_probs , need_time
 
     def update_with_move(self, last_move):
         """Step forward in the tree, keeping everything we already know
@@ -313,26 +349,40 @@ class Gumbel_MCTSPlayer(object):
         self.mcts.update_with_move(-1)
 
     
-    def get_action(self, board, temp=1e-3, return_prob=0):
+    def get_action(self, board, temp=1e-3, return_prob=0,return_time = False):
         sensible_moves = board.availables
         # the pi vector returned by MCTS as in the alphaGo Zero paper
         move_probs = np.zeros(board.width*board.height)
         
         
+        
         if len(sensible_moves) > 0:
+
             # 在搜索树中利用sequential halving with Gumbel 来进行动作选择 并且返回对应的决策函数
-            move, move_probs = self.mcts.get_move_probs(board, temp,self.m_action)
-            # print(move)
+            move, acts, probs,simul_mean_time  = self.mcts.get_move_probs(board, temp,self.m_action)
+
+     
 
             # 重置搜索树
             self.mcts.update_with_move(-1)
-        
 
-            if return_prob:
-                
-                return move, move_probs
+            move_probs[list(acts)] = probs
+
+
+            if return_time:
+
+                if return_prob:
+                    
+                    return move, move_probs,simul_mean_time
+                else:
+                    return move,simul_mean_time
             else:
-                return move
+
+                if return_prob:
+                    
+                    return move, move_probs
+                else:
+                    return move
         else:
             print("WARNING: the board is full")
 

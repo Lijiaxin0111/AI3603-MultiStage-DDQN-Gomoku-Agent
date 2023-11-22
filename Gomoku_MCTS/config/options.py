@@ -21,7 +21,7 @@ parser.add_argument('--config', type=str, default='config/config.yaml', help='Pa
 parser.add_argument('--gpu_num', type=int, default=1)
 parser.add_argument('--gpu_id', type=str, default='2')
 parser.add_argument('--device', type=str, default='cuda:2')
-parser.add_argument('--use_gpu', type = bool, default= True)
+parser.add_argument('--use_gpu', type = int, default= 1)
 
 
 # save options
@@ -55,13 +55,17 @@ parser.add_argument("--distributed",type=bool,default=False)
 parser.add_argument("--preload_model",type=str, default="")
 
 # MCTSPlayer setting
-parser.add_argument("--Player", type=int,default= 0 ,help="the MCTS player:=  0: Alphazero;  1: Gumbel_Alphazero")
+parser.add_argument("--Player", type=int,default= 0 ,help="the player set:=  0: Alphazero ;  1: Gumbel_Alphazero ")
 parser.add_argument("--mood", type=int,default= 0 ,help="the test mood:=  0: Alphazero Vs Pure;  1: Gumbel_Alphazero Vs Pure; 2:Alphazero Vs Gumbel_Alphazero  ")
 
 # Alphazero  agent setting
 parser.add_argument("--temp", type=float,default= 1.0 ,help="the temperature parameter when calculate the decision function getting the next action")
 parser.add_argument("--n_playout",type=int, default=200, help="num of simulations for each move ")
 parser.add_argument("--c_puct",type=int, default=5, help= "the balance parameter between exploration and exploitative ")
+
+# GumbelAlphazero agent setting
+parser.add_argument("--action_m",type=int, default=8, help="num of simulations for each move ")
+
 
 # prue_mcts agent setting
 parser.add_argument("--pure_mcts_playout_num",type=int, default=200)

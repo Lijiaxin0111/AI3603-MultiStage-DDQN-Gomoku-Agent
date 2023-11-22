@@ -5,9 +5,10 @@
 
 ### 任务进度记录：
 
-- 2023-11-19.hbh.
+- 2023-11-21.ljx.
   - 复现了Gumbel_MCST
   - 在main_workder里面增加了"--Player" 参数,'0' 为 Alphazero, '1' 为 Gumbel Alphazero 
+  - 在main_workder里面增加了"--mood" 参数,0: Alphazero Vs Pure;  1: Gumbel_Alphazero Vs Pure; 2:Alphazero Vs Gumbel_Alphazero ,仅在test，valid的时候起作用, train的时候记得设置好！！！不然valid的时候就不是需要的那个模型
 
 - 2023-11-19.hbh.
   - 完成了可视化界面的初稿

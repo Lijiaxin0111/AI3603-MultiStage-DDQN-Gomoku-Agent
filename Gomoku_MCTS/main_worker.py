@@ -72,6 +72,7 @@ class MainWorker():
         self.check_freq = opts.check_freq
         self.game_batch_num = opts.game_batch_num 
         self.pure_mcts_playout_num = opts.pure_mcts_playout_num
+        self.m = opts.action_m
 
         self.device = device
         # self.use_gpu = opts.use_gpu
@@ -113,7 +114,8 @@ class MainWorker():
             self.mcts_player = Gumbel_MCTSPlayer(self.policy_value_net.policy_value_fn,
                                         c_puct=self.c_puct,
                                         n_playout=self.n_playout,
-                                        is_selfplay=1)
+                                        is_selfplay=1,
+                                        m_action= self.m)
             print("[Now] The MCTS PLATER: Gumbel_Alphazero ")
 
         
@@ -133,8 +135,11 @@ class MainWorker():
         extend_data = []
         for state, mcts_porb, winner in play_data:
             for i in [1, 2, 3, 4]:
+                
+                
                 # rotate counterclockwise
                 equi_state = np.array([np.rot90(s, i) for s in state])
+                
                 equi_mcts_prob = np.rot90(np.flipud(
                     mcts_porb.reshape(self.board_height, self.board_width)), i)
                 extend_data.append((equi_state,
@@ -153,9 +158,11 @@ class MainWorker():
         player = self.mcts_player
         winner, play_data = game.start_self_play(player,
                                                     temp=self.temp)
-        play_data = list(play_data)[:]
-        play_data = self.get_equi_data(play_data)
 
+        play_data = list(play_data)[:]
+      
+        play_data = self.get_equi_data(play_data)
+      
         return play_data
 
     def collect_selfplay_data(self, n_games=1):
@@ -188,6 +195,7 @@ class MainWorker():
             """perform a training step"""
             # wrap in Variable
             if self.use_gpu:
+                
                 state_batch = Variable(torch.FloatTensor(state_batch).cuda())
                 mcts_probs = Variable(torch.FloatTensor(mcts_probs_batch).cuda())
                 winner_batch = Variable(torch.FloatTensor(winner_batch).cuda())
@@ -261,7 +269,8 @@ class MainWorker():
         elif opts.Player == 1:
             current_mcts_player =  Gumbel_MCTSPlayer(self.policy_value_net.policy_value_fn,
                                         c_puct=self.c_puct,
-                                        n_playout=self.n_playout)
+                                        n_playout=self.n_playout,
+                                        m_action=self.m)
             print("[TEST] The MCTS PLATER: Gumbel_Alphazero ")
 
 
@@ -284,13 +293,14 @@ class MainWorker():
             elif opts.mood == 1:
                 current_mcts_player =  Gumbel_MCTSPlayer(self.policy_value_net.policy_value_fn,
                                                         c_puct=self.c_puct,
-                                                        n_playout=self.n_playout)
+                                                        n_playout=self.n_playout,
+                                                        m_action=self.m)
 
                 pure_mcts_player = MCTS_Pure(c_puct=5,n_playout=self.pure_mcts_playout_num)
                 print("[TEST] Gumbel_Alphazero  Vs MCTS_Pure")
 
             # Alphazero Vs  Gumbel_Alphazero
-            elif opts. mood == 2:
+            elif opts.mood == 2:
 
                 current_mcts_player =  MCTSPlayer(self.policy_value_net.policy_value_fn,
                                                         c_puct=self.c_puct,
@@ -299,7 +309,8 @@ class MainWorker():
 
                 pure_mcts_player = Gumbel_MCTSPlayer(self.policy_value_net.policy_value_fn,
                                                         c_puct=self.c_puct,
-                                                        n_playout=self.n_playout)
+                                                        n_playout=self.n_playout,
+                                                        m_action=self.m)
 
                 print("[TEST] Alphazero Vs  Gumbel_Alphazero ")
             else :
@@ -337,7 +348,7 @@ class MainWorker():
             batch_bar = tqdm(range(self.game_batch_num))
             for i in batch_bar:
                 self.collect_selfplay_data(self.play_batch_size)
-
+                print("Done")
                 if len(self.data_buffer) > self.batch_size:
                     kl,  loss, entropy,explained_var_old, explained_var_new = self.policy_update()
 
