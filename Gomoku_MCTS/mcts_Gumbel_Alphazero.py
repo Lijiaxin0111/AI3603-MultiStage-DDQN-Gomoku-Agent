@@ -1,14 +1,19 @@
 """
-FileName: mian_worker.py
+FileName: main_worker.py
 Author: Jiaxin Li
-Create Date: 2023/11/2
+Create Date: 2023/11/21
 Description: The implement of  Gumbel MCST 
 Edit History:
+Debug: the dim of output: probs
 """
 
 import numpy as np
 import copy
 import time 
+
+from config.options import *
+import sys
+from config.utils import *
 
 
 def softmax(x):
@@ -54,11 +59,19 @@ class TreeNode(object):
         (pi'(a) - N(a) \ (1 + \sum_b N(b)))
         Return: A tuple of (action, next_node)
         """
+        # if opts.split == "train":
+        #     v_pi = v_pi.detach().numpy()
+        # print(v_pi)
+        
+
+        
 
         max_N_b = np.max(np.array( [act_node[1]._n_visits   for act_node in   self._children.items()]))
-    
 
-        pi_ = softmax( np.array( [ act_node[1].get_pi(v_pi,max_N_b)  for act_node in   self._children.items() ])).reshape(len(list(self._children.items())) ,-1)
+        if opts.split == "train":
+            pi_ = softmax( np.array( [ act_node[1].get_pi(v_pi,max_N_b)  for act_node in   self._children.items() ])).reshape(len(list(self._children.items())) ,-1)
+        else:
+            pi_ = softmax( np.array( [ act_node[1].get_pi(v_pi,max_N_b) for act_node in   self._children.items() ])).reshape(len(list(self._children.items())) ,-1)
         # print(pi_.shape)
         
 
@@ -81,7 +94,12 @@ class TreeNode(object):
         # Count visit.
         self._n_visits += 1
         # Update Q, a running average of values for all visits.
-        self._Q += (1.0*(leaf_value - self._Q) / self._n_visits)
+        if opts.split == "train":
+            self._Q = self._Q +  (1.0*(leaf_value  - self._Q ) / self._n_visits)
+         
+            
+        else: 
+            self._Q += (1.0*(leaf_value - self._Q) / self._n_visits)
 
     def update_recursive(self, leaf_value):
         """Like a call to update(), but applied recursively for all ancestors.
@@ -164,7 +182,13 @@ class Gumbel_MCTS(object):
         # (action, probability) tuples p and also a score v in [-1, 1]
         # for the current player.
         action_probs, leaf_value = self._policy(state)
+    
+        leaf_value = leaf_value.detach().numpy()[0][0]
+
         node._v = leaf_value
+    
+
+
         # Check for end of game.
         end, winner = state.game_end()
         if not end:
@@ -183,13 +207,15 @@ class Gumbel_MCTS(object):
    
 
     def top_k(self,x, k):
-
+        print("x",x.shape)
+        print("k ", k)
 
         return np.argpartition(x, k)[..., -k:]
 
     def sample_k(self,logits, k):
         u = np.random.uniform(size=np.shape(logits))
         z = -np.log(-np.log(u))
+
   
         
         return self.top_k(logits + z, k),z
@@ -210,6 +236,8 @@ class Gumbel_MCTS(object):
         # 对根节点进行拓展
         act_probs, leaf_value = self._policy(state)
         act_probs =  list(act_probs)
+
+        leaf_value = leaf_value.detach().numpy()[0][0]
         
         # print(list(act_probs))
         porbs = [prob  for act,prob in (act_probs)]
@@ -261,7 +289,9 @@ class Gumbel_MCTS(object):
                 N = n
             
             # 进行新的一轮不重复采样, 采样在之前的动作前一半的动作, 对应公式 g + logits + \sigma( \hat{q} )
+            # print([action_node[1]._Q for action_node in self._root._children.items()  ])
             
+       
             q_hat = np.array([action_node[1]._Q for action_node in self._root._children.items()  ])
             
 
@@ -277,8 +307,9 @@ class Gumbel_MCTS(object):
         max_N_b = np.max(np.array( [act_node[1]._n_visits   for act_node in   self._root._children.items()]  ))
 
         final_act_probs=    softmax( np.array( [ act_node[1].get_pi(leaf_value, max_N_b)   for act_node in   self._root._children.items() ]))
+        action =  ( np.array( [ act_node[0]   for act_node in   self._root._children.items() ]))
 
-        return np.array(list(self._root._children.items()))[A_topm][0][0], final_act_probs
+        return   np.array(list(self._root._children.items()))[A_topm][0][0], action,  final_act_probs
 
     def update_with_move(self, last_move):
         """Step forward in the tree, keeping everything we already know
@@ -311,19 +342,25 @@ class Gumbel_MCTSPlayer(object):
         self.mcts.update_with_move(-1)
 
     
-    def get_action(self, board, temp=1e-3, return_prob=0):
+    def get_action(self, board, temp=1e-3, return_prob=0,return_time = False):
         sensible_moves = board.availables
         # the pi vector returned by MCTS as in the alphaGo Zero paper
         move_probs = np.zeros(board.width*board.height)
         
         
+        
         if len(sensible_moves) > 0:
+            start = time.time()
             # 在搜索树中利用sequential halving with Gumbel 来进行动作选择 并且返回对应的决策函数
-            move, move_probs = self.mcts.get_move_probs(board, temp,self.m_action)
-            # print(move)
+            move, acts, probs = self.mcts.get_move_probs(board, temp,self.m_action)
+    
 
             # 重置搜索树
             self.mcts.update_with_move(-1)
+            move_probs[list(acts)] = probs
+            if return_time:
+                print("[OBSERVER] get a move need", time.time() - start)
+            
         
 
             if return_prob:
