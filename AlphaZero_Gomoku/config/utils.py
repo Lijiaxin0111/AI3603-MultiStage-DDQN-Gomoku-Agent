@@ -8,6 +8,7 @@ import time
 """ ==================== Save ======================== """
 
 def make_path():
+    print(opts.game_batch_num, opts.board_width)
     return "epochs={}_size={}".format(opts.game_batch_num, opts.board_width)
 
 

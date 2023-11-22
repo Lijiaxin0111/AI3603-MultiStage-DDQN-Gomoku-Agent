@@ -10,8 +10,8 @@ train_options="--expri Gumbel_alphazero_train \
 --board_height 9 \
 --use_gpu 0 \
 --mood 1 \
---epochs 1000"
-
+--game_batch_num 1000 \
+"
 run_cmd="python -u $dir/main_worker.py $train_options"
 echo $run_cmd
 $run_cmd
