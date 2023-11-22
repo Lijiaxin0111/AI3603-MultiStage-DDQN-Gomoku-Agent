@@ -74,7 +74,8 @@ class MainWorker():
         self.pure_mcts_playout_num = opts.pure_mcts_playout_num
 
         self.device = device
-        self.use_gpu = opts.use_gpu
+        # self.use_gpu = opts.use_gpu
+        self.use_gpu = device == "cuda"
 
         self.board = Board(width=self.board_width,
                            height=self.board_height,
@@ -390,7 +391,8 @@ if __name__ == "__main__":
         init_seeds(opts.seed + local_rank)
         
     else:
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        device = opts.device
         init_seeds(opts.seed)
 
     print("seed: ",opts.seed )
