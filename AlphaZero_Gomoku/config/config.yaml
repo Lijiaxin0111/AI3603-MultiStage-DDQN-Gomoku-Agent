@@ -1,0 +1,10 @@
+# ckpt/logger options(dynamic)
+checkpoint_base: checkpoint
+visual_base: visualization
+log_base: log
+
+# dataset
+data_base: dataset
+
+
+
