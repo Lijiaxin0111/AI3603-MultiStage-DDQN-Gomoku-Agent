@@ -10,6 +10,7 @@
   - [ ] AI VS AI
 - [ ] **Alphazero边缘注意力提升**
     - [ ] Board + Gaussian Distribution
+    - [ ] Let Alphazero play with huamn to collect datas relevant to edge-policy improvement?
 - [ ] Midterm Report
 - [ ] Final Report
 
