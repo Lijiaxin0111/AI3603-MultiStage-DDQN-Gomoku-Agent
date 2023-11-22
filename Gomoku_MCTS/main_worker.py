@@ -72,6 +72,7 @@ class MainWorker():
         self.check_freq = opts.check_freq
         self.game_batch_num = opts.game_batch_num 
         self.pure_mcts_playout_num = opts.pure_mcts_playout_num
+        self.m = opts.action_m
 
         self.device = device
         # self.use_gpu = opts.use_gpu
@@ -113,7 +114,8 @@ class MainWorker():
             self.mcts_player = Gumbel_MCTSPlayer(self.policy_value_net.policy_value_fn,
                                         c_puct=self.c_puct,
                                         n_playout=self.n_playout,
-                                        is_selfplay=1)
+                                        is_selfplay=1,
+                                        m_action= self.m)
             print("[Now] The MCTS PLATER: Gumbel_Alphazero ")
 
         
@@ -267,7 +269,8 @@ class MainWorker():
         elif opts.Player == 1:
             current_mcts_player =  Gumbel_MCTSPlayer(self.policy_value_net.policy_value_fn,
                                         c_puct=self.c_puct,
-                                        n_playout=self.n_playout)
+                                        n_playout=self.n_playout,
+                                        m_action=self.m)
             print("[TEST] The MCTS PLATER: Gumbel_Alphazero ")
 
 
@@ -290,7 +293,8 @@ class MainWorker():
             elif opts.mood == 1:
                 current_mcts_player =  Gumbel_MCTSPlayer(self.policy_value_net.policy_value_fn,
                                                         c_puct=self.c_puct,
-                                                        n_playout=self.n_playout)
+                                                        n_playout=self.n_playout,
+                                                        m_action=self.m)
 
                 pure_mcts_player = MCTS_Pure(c_puct=5,n_playout=self.pure_mcts_playout_num)
                 print("[TEST] Gumbel_Alphazero  Vs MCTS_Pure")
@@ -305,7 +309,8 @@ class MainWorker():
 
                 pure_mcts_player = Gumbel_MCTSPlayer(self.policy_value_net.policy_value_fn,
                                                         c_puct=self.c_puct,
-                                                        n_playout=self.n_playout)
+                                                        n_playout=self.n_playout,
+                                                        m_action=self.m)
 
                 print("[TEST] Alphazero Vs  Gumbel_Alphazero ")
             else :

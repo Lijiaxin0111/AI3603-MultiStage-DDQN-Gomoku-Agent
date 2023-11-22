@@ -207,8 +207,8 @@ class Gumbel_MCTS(object):
    
 
     def top_k(self,x, k):
-        print("x",x.shape)
-        print("k ", k)
+        # print("x",x.shape)
+        # print("k ", k)
 
         return np.argpartition(x, k)[..., -k:]
 
@@ -230,8 +230,8 @@ class Gumbel_MCTS(object):
         # 这里需要修改：1
         # logits 暂定为 p
 
-        n = self._n_playout
-        m = m_action
+        start_time = time.time()
+
 
         # 对根节点进行拓展
         act_probs, leaf_value = self._policy(state)
@@ -242,6 +242,10 @@ class Gumbel_MCTS(object):
         # print(list(act_probs))
         porbs = [prob  for act,prob in (act_probs)]
         self._root.expand(act_probs)
+
+
+        n = self._n_playout
+        m = min( m_action,len( porbs) /2)
 
 
         # 先进行Gumbel 分布采样，不重复的采样前m个动作，对应选择公式 logits + g
@@ -309,7 +313,10 @@ class Gumbel_MCTS(object):
         final_act_probs=    softmax( np.array( [ act_node[1].get_pi(leaf_value, max_N_b)   for act_node in   self._root._children.items() ]))
         action =  ( np.array( [ act_node[0]   for act_node in   self._root._children.items() ]))
 
-        return   np.array(list(self._root._children.items()))[A_topm][0][0], action,  final_act_probs
+        need_time = time.time() - start_time
+        print(f" Gumbel Alphazero sum_time: {need_time  }, total_simulation: {self._n_playout}")
+
+        return   np.array(list(self._root._children.items()))[A_topm][0][0], action,  final_act_probs , need_time
 
     def update_with_move(self, last_move):
         """Step forward in the tree, keeping everything we already know
@@ -350,24 +357,32 @@ class Gumbel_MCTSPlayer(object):
         
         
         if len(sensible_moves) > 0:
-            start = time.time()
+
             # 在搜索树中利用sequential halving with Gumbel 来进行动作选择 并且返回对应的决策函数
-            move, acts, probs = self.mcts.get_move_probs(board, temp,self.m_action)
-    
+            move, acts, probs,simul_mean_time  = self.mcts.get_move_probs(board, temp,self.m_action)
+
+     
 
             # 重置搜索树
             self.mcts.update_with_move(-1)
-            move_probs[list(acts)] = probs
-            if return_time:
-                print("[OBSERVER] get a move need", time.time() - start)
-            
-        
 
-            if return_prob:
-                
-                return move, move_probs
+            move_probs[list(acts)] = probs
+
+
+            if return_time:
+
+                if return_prob:
+                    
+                    return move, move_probs,simul_mean_time
+                else:
+                    return move,simul_mean_time
             else:
-                return move
+
+                if return_prob:
+                    
+                    return move, move_probs
+                else:
+                    return move
         else:
             print("WARNING: the board is full")
 
