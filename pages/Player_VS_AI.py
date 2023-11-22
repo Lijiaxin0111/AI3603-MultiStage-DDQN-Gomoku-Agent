@@ -46,6 +46,7 @@ class Room:
         self.WINNER = _BLANK
         self.TIME = time.time()
         self.MCTS = MCTSpure(c_puct=5, n_playout=10)
+        self.MCTS = alphazero(PolicyValueNet(_BOARD_SIZE, _BOARD_SIZE).policy_value_fn, c_puct=5, n_playout=10)
         self.COORDINATE_1D = [_BOARD_SIZE_1D + 1]
         self.current_move = -1
         self.simula_time_list = []
@@ -60,6 +61,8 @@ if "ROOM" not in session_state:
     session_state.ROOM = Room("local")
 if "OWNER" not in session_state:
     session_state.OWNER = False
+if "USE_AIAID" not in session_state:
+    session_state.USE_AIAID = False
 
 # Check server health
 if "ROOMS" not in server_state:
@@ -88,6 +91,7 @@ MULTIPLAYER_TAG = st.sidebar.empty()
 with st.sidebar.container():
     ANOTHER_ROUND = st.empty()
     RESTART = st.empty()
+    AIAID = st.empty()
     EXIT = st.empty()
 GAME_INFO = st.sidebar.container()
 message = st.empty()
@@ -213,6 +217,14 @@ def gomoku():
             winner = _BLANK
         return winner
 
+    def ai_aid() -> None:
+        """
+        Use AI Aid.
+        """
+        session_state.USE_AIAID = not session_state.USE_AIAID
+        print('Use AI Aid: ', session_state.USE_AIAID)
+        draw_board(False)
+
     # Triggers the board response on click
     def handle_click(x, y):
         """
@@ -257,7 +269,11 @@ def gomoku():
     # Draw board
     def draw_board(response: bool):
         """construct each buttons for all cells of the board"""
-
+        if session_state.USE_AIAID:
+            acts, probs = session_state.ROOM.MCTS.mcts.get_move_probs(session_state.ROOM.BOARD)
+            sorted_acts_probs = sorted(zip(acts, probs), key=lambda x: x[1], reverse=True)
+            top_five_acts = [act for act, prob in sorted_acts_probs[:5]]
+            top_five_probs = [prob for act, prob in sorted_acts_probs[:5]]
         if response and session_state.ROOM.TURN == _BLACK:  # human turn
             print("Your turn")
             # construction of clickable buttons
@@ -276,13 +292,25 @@ def gomoku():
                             on_click=forbid_click
                         )
                     else:
-                        # enable click for other cells available for human choices
-                        BOARD_PLATE[i][j].button(
-                            _PLAYER_SYMBOL[cell],
-                            key=f"{i}:{j}",
-                            on_click=handle_click,
-                            args=(i, j),
-                        )
+                        if session_state.USE_AIAID and i * _BOARD_SIZE + j in top_five_acts:
+                            # enable click for other cells available for human choices
+                            # import pdb
+                            # pdb.set_trace()
+                            prob = top_five_probs[top_five_acts.index(i * _BOARD_SIZE + j)]
+                            BOARD_PLATE[i][j].button(
+                                _PLAYER_SYMBOL[cell] + f"({round(prob, 2)})",
+                                key=f"{i}:{j}",
+                                on_click=handle_click,
+                                args=(i, j),
+                            )
+                        else:
+                            # enable click for other cells available for human choices
+                            BOARD_PLATE[i][j].button(
+                                _PLAYER_SYMBOL[cell],
+                                key=f"{i}:{j}",
+                                on_click=handle_click,
+                                args=(i, j),
+                            )
 
 
         elif response and session_state.ROOM.TURN == _WHITE:  # AI turn
@@ -292,8 +320,9 @@ def gomoku():
                 print("AI's turn")
                 print("Below are current board under AI's view")
                 print(session_state.ROOM.BOARD.board_map)
-                move, simul_time = session_state.ROOM.MCTS.get_action(session_state.ROOM.BOARD)
-                session_state.ROOM.simula_time_list.append(simul_time)
+                # move, simul_time = session_state.ROOM.MCTS.get_action(session_state.ROOM.BOARD)
+                move = session_state.ROOM.MCTS.get_action(session_state.ROOM.BOARD)
+                # session_state.ROOM.simula_time_list.append(simul_time)
                 print("AI takes move: ", move)
                 session_state.ROOM.current_move = move
                 gpt_response = move
@@ -321,17 +350,35 @@ def gomoku():
                                 on_click=forbid_click
                             )
                         else:
-                            # enable click for other cells available for human choices
-                            BOARD_PLATE[i][j].button(
-                                _PLAYER_SYMBOL[cell],
-                                key=f"{i}:{j}",
-                                on_click=handle_click,
-                                args=(i, j),
-                            )
+                            if session_state.USE_AIAID and i * _BOARD_SIZE + j in top_five_acts:
+                                # enable click for other cells available for human choices
+                                # import pdb
+                                # pdb.set_trace()
+                                prob = top_five_probs[top_five_acts.index(i * _BOARD_SIZE + j)]
+                                BOARD_PLATE[i][j].button(
+                                    _PLAYER_SYMBOL[cell] + f"({round(prob, 2)})",
+                                    key=f"{i}:{j}",
+                                    on_click=handle_click,
+                                    args=(i, j),
+                                )
+                            else:
+                                # enable click for other cells available for human choices
+                                BOARD_PLATE[i][j].button(
+                                    _PLAYER_SYMBOL[cell],
+                                    key=f"{i}:{j}",
+                                    on_click=handle_click,
+                                    args=(i, j),
+                                )
 
+
+            # message.markdown(
+            #     'AI agent has calculated its strategy, which takes <span style="color: blue; font-size: 20px;">{:.3e}</span>s per simulation.'.format(
+            #         simul_time),
+            #     unsafe_allow_html=True
+            # )
             message.markdown(
                 'AI agent has calculated its strategy, which takes <span style="color: blue; font-size: 20px;">{:.3e}</span>s per simulation.'.format(
-                    simul_time),
+                    0.0),
                 unsafe_allow_html=True
             )
             LOG.subheader("Logs")
@@ -355,10 +402,19 @@ def gomoku():
             print("Game over")
             for i, row in enumerate(session_state.ROOM.BOARD.board_map):
                 for j, cell in enumerate(row):
-                    BOARD_PLATE[i][j].write(
-                        _PLAYER_SYMBOL[cell],
-                        key=f"{i}:{j}",
-                    )
+                    if session_state.USE_AIAID and i * _BOARD_SIZE + j in top_five_acts:
+                        # import pdb
+                        # pdb.set_trace()
+                        prob = top_five_probs[top_five_acts.index(i * _BOARD_SIZE + j)]
+                        BOARD_PLATE[i][j].write(
+                            _PLAYER_SYMBOL[cell] + f"({round(prob, 2)})",
+                            key=f"{i}:{j}",
+                        )
+                    else:
+                        BOARD_PLATE[i][j].write(
+                            _PLAYER_SYMBOL[cell],
+                            key=f"{i}:{j}",
+                        )
 
     # Game process control
     def game_control():
@@ -401,6 +457,11 @@ def gomoku():
         st.line_chart(chart_data)
 
     # The main game loop
+    AIAID.button(
+        "Use AI Aid",
+        on_click=ai_aid,
+        help="Use AI Aid to help you make moves",
+    )
     game_control()
     update_info()
 
