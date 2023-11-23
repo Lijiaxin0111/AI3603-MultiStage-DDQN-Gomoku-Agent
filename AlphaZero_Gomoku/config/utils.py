@@ -9,7 +9,7 @@ import time
 
 def make_path():
     print(opts.game_batch_num, opts.board_width)
-    return "epochs={}_size={}".format(opts.game_batch_num, opts.board_width)
+    return "epochs={}_size={}_biased={}".format(opts.game_batch_num, opts.board_width,opts.biased)
 
 
 

@@ -12,6 +12,8 @@ import torch.optim as optim
 import torch.nn.functional as F
 from torch.autograd import Variable
 import numpy as np
+import numpy as np
+import scipy.stats as stats
 
 
 def set_learning_rate(optimizer, lr):
@@ -22,6 +24,7 @@ def set_learning_rate(optimizer, lr):
 
 class Net(nn.Module):
     """policy-value network module"""
+
     def __init__(self, board_width, board_height):
         super(Net, self).__init__()
 
@@ -33,11 +36,11 @@ class Net(nn.Module):
         self.conv3 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
         # action policy layers
         self.act_conv1 = nn.Conv2d(128, 4, kernel_size=1)
-        self.act_fc1 = nn.Linear(4*board_width*board_height,
-                                 board_width*board_height)
+        self.act_fc1 = nn.Linear(4 * board_width * board_height,
+                                 board_width * board_height)
         # state value layers
         self.val_conv1 = nn.Conv2d(128, 2, kernel_size=1)
-        self.val_fc1 = nn.Linear(2*board_width*board_height, 64)
+        self.val_fc1 = nn.Linear(2 * board_width * board_height, 64)
         self.val_fc2 = nn.Linear(64, 1)
 
     def forward(self, state_input):
@@ -47,11 +50,11 @@ class Net(nn.Module):
         x = F.relu(self.conv3(x))
         # action policy layers
         x_act = F.relu(self.act_conv1(x))
-        x_act = x_act.view(-1, 4*self.board_width*self.board_height)
+        x_act = x_act.view(-1, 4 * self.board_width * self.board_height)
         x_act = F.log_softmax(self.act_fc1(x_act))
         # state value layers
         x_val = F.relu(self.val_conv1(x))
-        x_val = x_val.view(-1, 2*self.board_width*self.board_height)
+        x_val = x_val.view(-1, 2 * self.board_width * self.board_height)
         x_val = F.relu(self.val_fc1(x_val))
         x_val = F.tanh(self.val_fc2(x_val))
         return x_act, x_val
@@ -59,6 +62,7 @@ class Net(nn.Module):
 
 class PolicyValueNet():
     """policy-value network """
+
     def __init__(self, board_width, board_height,
                  model_file=None, use_gpu=False):
         self.use_gpu = use_gpu
@@ -77,6 +81,16 @@ class PolicyValueNet():
             net_params = torch.load(model_file)
             self.policy_value_net.load_state_dict(net_params)
 
+    def apply_normal_bias(self, tensor, mean=0, std=1):
+        bsize = tensor.shape[0]
+        x, y = np.meshgrid(np.linspace(-1, 1, bsize), np.linspace(-1, 1, bsize))
+        d = np.sqrt(x * x + y * y)
+        sigma, mu = 1.0, 0.0
+        gauss = np.exp(-((d - mu) ** 2 / (2.0 * sigma ** 2)))
+        # Applying the bias only to non-zero elements
+        biased_tensor = tensor - (tensor != 0) * gauss
+        return biased_tensor
+
     def policy_value(self, state_batch):
         """
         input: a batch of states
@@ -93,7 +107,7 @@ class PolicyValueNet():
             act_probs = np.exp(log_act_probs.data.numpy())
             return act_probs, value.data.numpy()
 
-    def policy_value_fn(self, board):
+    def policy_value_fn(self, board, bias=False):
         """
         input: board
         output: a list of (action, probability) tuples for each available
@@ -101,14 +115,17 @@ class PolicyValueNet():
         """
         legal_positions = board.availables
         current_state = np.ascontiguousarray(board.current_state().reshape(
-                -1, 4, self.board_width, self.board_height))
+            -1, 4, self.board_width, self.board_height))
+        if bias:
+            current_state[0][1] = self.apply_normal_bias(current_state[0][1])
+
         if self.use_gpu:
             log_act_probs, value = self.policy_value_net(
-                    Variable(torch.from_numpy(current_state)).cuda().float())
+                Variable(torch.from_numpy(current_state)).cuda().float())
             act_probs = np.exp(log_act_probs.data.cpu().numpy().flatten())
         else:
             log_act_probs, value = self.policy_value_net(
-                    Variable(torch.from_numpy(current_state)).float())
+                Variable(torch.from_numpy(current_state)).float())
             act_probs = np.exp(log_act_probs.data.numpy().flatten())
         act_probs = zip(legal_positions, act_probs[legal_positions])
         value = value.data[0][0]
@@ -116,7 +133,7 @@ class PolicyValueNet():
 
     def train_step(self, state_batch, mcts_probs, winner_batch, lr):
         """perform a training step"""
-    
+
         # self.use_gpu = True
         # wrap in Variable
         if self.use_gpu:
@@ -138,18 +155,17 @@ class PolicyValueNet():
         # define the loss = (z - v)^2 - pi^T * log(p) + c||theta||^2
         # Note: the L2 penalty is incorporated in optimizer
         value_loss = F.mse_loss(value.view(-1), winner_batch)
-        policy_loss = -torch.mean(torch.sum(mcts_probs*log_act_probs, 1))
+        policy_loss = -torch.mean(torch.sum(mcts_probs * log_act_probs, 1))
         loss = value_loss + policy_loss
         # backward and optimize
         loss.backward()
         self.optimizer.step()
         # calc policy entropy, for monitoring only
         entropy = -torch.mean(
-                torch.sum(torch.exp(log_act_probs) * log_act_probs, 1)
-                )
-        
-   
-        #for pytorch version >= 0.5 please use the following line instead.
+            torch.sum(torch.exp(log_act_probs) * log_act_probs, 1)
+        )
+
+        # for pytorch version >= 0.5 please use the following line instead.
         return loss.item(), entropy.item()
 
     def get_policy_param(self):

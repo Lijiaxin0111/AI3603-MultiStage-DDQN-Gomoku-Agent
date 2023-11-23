@@ -13,7 +13,8 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 import numpy as np
 
-
+import numpy as np
+import scipy.stats as stats
 
 
 
@@ -101,6 +102,16 @@ class PolicyValueNet():
             self.policy_value_net.load_state_dict(net_params)
             # self.policy_value_net.reshape_linear()
 
+    def apply_normal_bias(self, tensor, mean=0, std=1):
+        bsize = tensor.shape[0]
+        x, y = np.meshgrid(np.linspace(-1, 1, bsize), np.linspace(-1, 1, bsize))
+        d = np.sqrt(x * x + y * y)
+        sigma, mu = 1.0, 0.0
+        gauss = np.exp(-((d - mu) ** 2 / (2.0 * sigma ** 2)))
+        # Applying the bias only to non-zero elements
+        biased_tensor = tensor - (tensor != 0) * gauss
+        return biased_tensor
+
     def policy_value(self, state_batch):
         """
         input: a batch of states
@@ -117,15 +128,22 @@ class PolicyValueNet():
             act_probs = np.exp(log_act_probs.data.numpy())
             return act_probs, value.data.numpy()
 
-    def policy_value_fn(self, board):
+    def policy_value_fn(self, board, bias=False):
         """
         input: board
         output: a list of (action, probability) tuples for each available
         action and the score of the board state
         """
         legal_positions = board.availables
+        """
+        数组具有四个通道:通道一表示当前玩家的棋子位置，
+        第二个通道表示对手的棋子位置，第三个通道表示最后一步移动的位置.通道四是一个指示符，用于表示当前轮到哪个玩家(如果棋盘上的总移动次数是偶数，那么这个通道的所有元素都为1，表示是第一个玩道都是一个 width x height 的二维数组，代表着棋盘的布局。对于第一个和第二个通道，如果一个位置上有当前玩家或对手的棋三个通道，只有最后一步移动的位置是1，其余位置都为8。对于第四个通道，如果是第一个玩家的回合，那么所有的位置都是1，否状态数组在垂直方向上翻转，以匹配棋盘的实际布局。
+        """
         current_state = np.ascontiguousarray(board.current_state().reshape(
                 -1, 4, self.board_width, self.board_height))
+        if bias:
+            current_state[0][1] = self.apply_normal_bias(current_state[0][1])
+
         if self.use_gpu:
             log_act_probs, value = self.policy_value_net(
                     Variable(torch.from_numpy(current_state)).cuda().float())
