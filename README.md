@@ -1,7 +1,20 @@
 # AI3603 Final Project: Gomoku Agent
 
 <a href='https://github.com/Lijiaxin0111/AI_3603_BIGHOME'><img src='https://img.shields.io/badge/Project-Page-Green'></a> 
-<a href='https://github.com/Lijiaxin0111/AI_3603_BIGHOME'><img src='https://img.shields.io/badge/Report-PDF-red'></a> <a href='https://huggingface.co/spaces/Gomoku-Zero/Demo'><img src='https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Spaces-blue'> 
+<a href='https://notes.sjtu.edu.cn/dl9X8nY6TOSIFltbUP5y2g'><img src='https://img.shields.io/badge/MidtermReport-PDF-red'></a> <a href='https://huggingface.co/spaces/Gomoku-Zero/Demo'><img src='https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Spaces-blue'> 
+
+## Todo
+- [ ] **Huggingface Space Web 多模型部署**
+  - [ ] Human VS AI
+    - [x] AI assistant
+  - [ ] AI VS AI
+- [ ] **Alphazero边缘注意力提升**
+    - [ ] Board + Gaussian Distribution
+    - [ ] Let Alphazero play with huamn to collect datas relevant to edge-policy improvement?
+- [ ] Midterm Report
+- [ ] Final Report
+
+
 
 ### 任务进度记录：
 
