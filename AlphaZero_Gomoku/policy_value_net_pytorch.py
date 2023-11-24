@@ -66,20 +66,41 @@ class PolicyValueNet():
     def __init__(self, board_width, board_height,
                  model_file=None, use_gpu=False):
         self.use_gpu = use_gpu
-        self.board_width = board_width
-        self.board_height = board_height
         self.l2_const = 1e-4  # coef of l2 penalty
-        # the policy value net module
-        if self.use_gpu:
-            self.policy_value_net = Net(board_width, board_height).cuda()
-        else:
-            self.policy_value_net = Net(board_width, board_height)
-        self.optimizer = optim.Adam(self.policy_value_net.parameters(),
-                                    weight_decay=self.l2_const)
 
         if model_file:
-            net_params = torch.load(model_file)
+            net_params = torch.load(model_file, map_location='cpu' if not use_gpu else None)
             self.policy_value_net.load_state_dict(net_params)
+            # Infer board dimensions from the loaded model
+            inferred_width, inferred_height = self.infer_board_size_from_model(net_params)
+            if inferred_width and inferred_height:
+                self.board_width = inferred_width
+                self.board_height = inferred_height
+                self.policy_value_net = Net(inferred_width, inferred_height).cuda() if use_gpu else Net(
+                    inferred_width, inferred_height)
+            self.board_width = inferred_width
+            self.board_height = inferred_height
+        else:
+            self.board_width = board_width
+            self.board_height = board_height
+            # the policy value net module
+            if self.use_gpu:
+                self.policy_value_net = Net(board_width, board_height).cuda()
+            else:
+                self.policy_value_net = Net(board_width, board_height)
+
+        self.optimizer = optim.Adam(self.policy_value_net.parameters(),
+                                        weight_decay=self.l2_const)
+
+    def infer_board_size_from_model(self, model):
+        # Use the size of the act_fc1 layer to infer board dimensions
+        for name, param in model.named_parameters():
+            if name == 'act_fc1.weight':
+                # Assuming the weight shape is [board_width * board_height, 4 * board_width * board_height]
+                c, _ = param.shape
+                board_size = int((c / 4) ** 0.5)  # Extracting board_width/height assuming they are the same
+                return board_size, board_size
+        return None
 
     def apply_normal_bias(self, tensor, mean=0, std=1):
         bsize = tensor.shape[0]
