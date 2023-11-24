@@ -12,6 +12,10 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 import threading
 
+from config.options import *
+import sys
+from config.utils import *
+from some_Gomoku_trick.board_cut import board_cut
 
 def softmax(x):
     probs = np.exp(x - np.max(x))
@@ -112,6 +116,7 @@ class MCTS(object):
         State is modified in-place, so a copy must be provided.
         """
         node = self._root
+
         if lock is not None:
             lock.acquire()
         while(1):
@@ -119,7 +124,11 @@ class MCTS(object):
                 break
             # Greedily select next move.
             action, node = node.select(self._c_puct)
+            # print("alpha action: ",action)
+            # print("avai:", state.availables)
             state.do_move(action)
+
+
         if lock is not None:
             lock.release()
         # Evaluate the leaf using a network which outputs a list of
@@ -167,8 +176,10 @@ class MCTS(object):
         ### end test multi-thread
 
         t = time.time()
+        
         for n in range(self._n_playout):
             start_time = time.time()
+            
 
             state_copy = copy.deepcopy(state)
             self._playout(state_copy)
@@ -224,7 +235,13 @@ class MCTSPlayer(object):
         move_probs = np.zeros(board.width*board.height)
         if len(sensible_moves) > 0:
             _, acts, probs, simul_mean_time = self.mcts.get_move_probs(board, temp)
+
             move_probs[list(acts)] = probs
+    
+            if opts.board_cut :
+                move_probs = board_cut(board,move_probs)
+                probs =  move_probs[list(acts)]
+
             if self._is_selfplay:
                 # add Dirichlet Noise for exploration (needed for
                 # self-play training)
@@ -240,6 +257,8 @@ class MCTSPlayer(object):
                 move = np.random.choice(acts, p=probs)
                 # reset the root node
                 self.mcts.update_with_move(-1)
+            
+            
 #                location = board.move_to_location(move)
 #                print("AI move: %d,%d\n" % (location[0], location[1]))
       

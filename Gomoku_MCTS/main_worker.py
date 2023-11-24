@@ -74,6 +74,8 @@ class MainWorker():
         self.pure_mcts_playout_num = opts.pure_mcts_playout_num
         self.m = opts.action_m
 
+
+
         self.device = device
         # self.use_gpu = opts.use_gpu
         self.use_gpu = device == "cuda"
@@ -117,6 +119,11 @@ class MainWorker():
                                         is_selfplay=1,
                                         m_action= self.m)
             print("[Now] The MCTS PLATER: Gumbel_Alphazero ")
+
+        if opts.highplayer_collect:
+            self.high_player = MCTSPlayer(self.policy_value_net.policy_value_fn,
+                                        c_puct=self.c_puct,
+                                        n_playout=self.n_playout)
 
         
         # The set of optimizer
@@ -164,6 +171,21 @@ class MainWorker():
         play_data = self.get_equi_data(play_data)
       
         return play_data
+    
+    def job_highplay(self, i):
+        game = self.game
+        player = self.mcts_player
+
+        high_player = self.high_player
+
+        winner, play_data = game.start_play_collect(player, high_player, start_player= i % 2,
+                                                    temp=self.temp)
+
+        play_data = list(play_data)[:]
+      
+        play_data = self.get_equi_data(play_data)
+      
+        return play_data
 
     def collect_selfplay_data(self, n_games=1):
         """collect self-play data for training"""
@@ -180,6 +202,17 @@ class MainWorker():
             for play_data in play_datas:
                 self.data_buffer.extend(play_data)
         # print('\n', 'data buffer size:', len(self.data_buffer))
+
+    def collect_highplay_data(self,n_games= 1):
+        collection_bar = range(n_games)
+        if n_games <= 4:
+            for i in collection_bar:
+                self.data_buffer.extend(self.job_highplay(i))
+        else:
+            with Pool(4) as p:
+                play_datas = p.map(self.job_highplay, collection_bar)
+            for play_data in play_datas:
+                self.data_buffer.extend(play_data)
 
     def policy_update(self):
         """update the policy-value net"""
@@ -209,11 +242,23 @@ class MainWorker():
 
             # forward
             log_act_probs, value = self.policy_value_net.policy_value_net(state_batch)
+
+
             # define the loss = (z - v)^2 - pi^T * log(p) + c||theta||^2
             # Note: the L2 penalty is incorporated in optimizer
             value_loss = F.mse_loss(value.view(-1), winner_batch)
             policy_loss = -torch.mean(torch.sum(mcts_probs*log_act_probs, 1))
+
+
+            # if the player is Gumbel player, policy loss is 
+            if opts.Player ==1 :
+                policy_loss = torch.mean( (torch.sum(mcts_probs * (
+                    np.log(mcts_probs + 1e-10) - log_act_probs),
+                    axis=1)))
+
             loss = value_loss + policy_loss
+
+
             # backward and optimize
             loss.backward()
             self.optimizer.step()
@@ -258,7 +303,6 @@ class MainWorker():
         Evaluate the trained policy by playing against the pure MCTS player
         Note: this is only for monitoring the progress of training
         """
-
 
 
         if opts.Player == 0 :
@@ -317,9 +361,6 @@ class MainWorker():
                 print("> error: illegal mood num")
 
 
-
-
-
         for i in range(n_games):
             winner = self.game.start_play(current_mcts_player,pure_mcts_player,
                                           start_player=i % 2,
@@ -347,8 +388,14 @@ class MainWorker():
 
             batch_bar = tqdm(range(self.game_batch_num))
             for i in batch_bar:
-                self.collect_selfplay_data(self.play_batch_size)
-                print("Done")
+                if opts.highplayer_collect:
+                    self.mcts_player._is_selfplay = 0
+                    self.collect_highplay_data(self.play_batch_size)
+                    # print("[Done] collect high")
+                
+                else:
+                    self.collect_selfplay_data(self.play_batch_size)
+                # print("Done")
                 if len(self.data_buffer) > self.batch_size:
                     kl,  loss, entropy,explained_var_old, explained_var_new = self.policy_update()
 
@@ -357,6 +404,7 @@ class MainWorker():
                     writer.add_scalar("policy_update/entropy", entropy ,i)
                     writer.add_scalar("policy_update/explained_var_old", explained_var_old,i)
                     writer.add_scalar("policy_update/explained_var_new ", explained_var_new ,i)
+                
 
 
                 batch_bar.set_description(f"game batch num {i}")
@@ -367,12 +415,13 @@ class MainWorker():
                     win_ratio = self.policy_evaluate()
 
                     batch_bar.set_description(f"game batch num {i+1}")
-                    writer.add_scalar("evaluate/explained_var_new ", win_ratio ,i)
+                    writer.add_scalar("evaluate/win_ratio ", win_ratio ,i)
                     batch_bar.set_postfix(loss= loss, entropy= entropy,win_ratio =win_ratio)
 
                     save_model(self.policy_value_net.policy_value_net,"current_policy.model")
                     if win_ratio > self.best_win_ratio:
                         print("New best policy!!!!!!!!")
+                        print("best win_ratio: ", self.best_win_ratio)
                         self.best_win_ratio = win_ratio
                         # update the best_policy
                         save_model(self.policy_value_net.policy_value_net,"best_policy.model")

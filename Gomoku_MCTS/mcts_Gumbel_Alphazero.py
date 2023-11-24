@@ -14,7 +14,7 @@ import time
 from config.options import *
 import sys
 from config.utils import *
-
+from some_Gomoku_trick.board_cut import board_cut
 
 def softmax(x):
     probs = np.exp(x - np.max(x))
@@ -181,6 +181,7 @@ class Gumbel_MCTS(object):
         # Evaluate the leaf using a network which outputs a list of
         # (action, probability) tuples p and also a score v in [-1, 1]
         # for the current player.
+        
         action_probs, leaf_value = self._policy(state)
     
         leaf_value = leaf_value.detach().numpy()[0][0]
@@ -234,6 +235,7 @@ class Gumbel_MCTS(object):
 
 
         # 对根节点进行拓展
+        
         act_probs, leaf_value = self._policy(state)
         act_probs =  list(act_probs)
 
@@ -241,6 +243,8 @@ class Gumbel_MCTS(object):
         
         # print(list(act_probs))
         porbs = [prob  for act,prob in (act_probs)]
+
+
         self._root.expand(act_probs)
 
 
@@ -362,12 +366,10 @@ class Gumbel_MCTSPlayer(object):
             move, acts, probs,simul_mean_time  = self.mcts.get_move_probs(board, temp,self.m_action)
 
      
-
             # 重置搜索树
             self.mcts.update_with_move(-1)
 
             move_probs[list(acts)] = probs
-
 
             if return_time:
 

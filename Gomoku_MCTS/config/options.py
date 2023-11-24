@@ -24,6 +24,7 @@ parser.add_argument('--device', type=str, default='cuda:2')
 parser.add_argument('--use_gpu', type = int, default= 1)
 
 
+
 # save options
 parser.add_argument('--clear_visualizer', dest='clear_visualizer', action='store_true')
 parser.add_argument('--std_log', dest='std_log', action='store_true')
@@ -46,6 +47,7 @@ parser.add_argument("--epochs",type=int,default= 5,help="num of train_steps for 
 parser.add_argument("--kl_targ",type=float,default=0.02,help="the target kl distance between the old decision function and the new decision function ")
 parser.add_argument("--check_freq",type=int,default=10,help='the frequence of the checking the win ratio when training')
 parser.add_argument("--game_batch_num",type=int,default=1000,help =  "the total training times") #1500
+parser.add_argument("--highplayer_collect",type=int,default=0,help =  "the source of data is from the games with the high agent")
 
 
 # parser.add_argument("--l2_const",type=float,default=1e-4,help=" coef of l2 penalty")
@@ -53,6 +55,9 @@ parser.add_argument("--distributed",type=bool,default=False)
 
 # preload_model setting
 parser.add_argument("--preload_model",type=str, default="")
+
+# some trick setting
+parser.add_argument("--board_cut",type=int, default=0)
 
 # MCTSPlayer setting
 parser.add_argument("--Player", type=int,default= 0 ,help="the player set:=  0: Alphazero ;  1: Gumbel_Alphazero ")
