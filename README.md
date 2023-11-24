@@ -4,6 +4,10 @@
 <a href='https://github.com/Lijiaxin0111/AI_3603_BIGHOME'><img src='https://img.shields.io/badge/Report-PDF-red'></a> <a href='https://huggingface.co/spaces/Gomoku-Zero/Demo'><img src='https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Spaces-blue'> 
 
 ### 任务进度记录：
+- 2023-11-24.ljx.
+  - 增加highplayer接口
+  - 修改Gumbel_MCST的loss的bug 面前还在进一步测试
+
 
 - 2023-11-21.ljx.
   - 复现了Gumbel_MCST
