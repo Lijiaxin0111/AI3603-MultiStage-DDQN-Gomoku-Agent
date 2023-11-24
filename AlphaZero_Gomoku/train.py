@@ -14,6 +14,7 @@ from mcts_pure import MCTSPlayer as MCTS_Pure
 from mcts_alphaZero import MCTSPlayer
 # from policy_value_net import PolicyValueNet  # Theano and Lasagne
 from policy_value_net_pytorch import PolicyValueNet  # Pytorch
+from policy_value_net_pytorch_new import PolicyValueNet as PolicyValueNet_New  # Pytorch
 # from policy_value_net_tensorflow import PolicyValueNet # Tensorflow
 # from policy_value_net_keras import PolicyValueNet # Keras
 # import joblib
@@ -61,8 +62,11 @@ class TrainPipeline():
 
         else:
             # start training from a new policy-value net
-            self.policy_value_net = PolicyValueNet(self.board_width,
-                                                   self.board_height)
+            # self.policy_value_net = PolicyValueNet(self.board_width,
+            #                                        self.board_height)
+            self.policy_value_net = PolicyValueNet_New(self.board_width,
+                                                       self.board_height)
+            print("using new policy_value_net")
         self.mcts_player = MCTSPlayer(self.policy_value_net.policy_value_fn,
                                       c_puct=self.c_puct,
                                       n_playout=self.n_playout,
@@ -224,6 +228,7 @@ class TrainPipeline():
 
 if __name__ == '__main__':
     writer = visualizer()
+    # training_pipeline = TrainPipeline()
     training_pipeline = TrainPipeline(init_model=opts.preload_model)
     training_pipeline.run()
     training_pipeline.policy_evaluate()

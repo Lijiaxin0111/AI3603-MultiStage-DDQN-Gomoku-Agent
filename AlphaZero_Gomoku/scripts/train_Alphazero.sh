@@ -1,12 +1,21 @@
 #!/bin/bash
 script_dir=$(cd $(dirname $0);pwd)
 dir=$(dirname $script_dir)
+
 train_options="
 --board_width 9 \
 --board_height 9 \
 --biased True \
---n_playout 1000 \
+--n_playout 500 \
 --preload_model ./checkpoint/epochs=3000_size=9_biased=True/best_policy.model"
+
+#train_options="
+#--board_width 9 \
+#--board_height 9 \
+#--biased True \
+#--n_playout 250 \
+#"
+
 
 #
 #train_options="
