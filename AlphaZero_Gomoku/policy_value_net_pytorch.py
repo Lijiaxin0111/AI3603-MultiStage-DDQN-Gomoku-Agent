@@ -67,22 +67,26 @@ class PolicyValueNet():
                  model_file=None, use_gpu=False):
         self.use_gpu = use_gpu
         self.l2_const = 1e-4  # coef of l2 penalty
+        self.board_width = board_width
+        self.board_height = board_height
 
         if model_file:
             net_params = torch.load(model_file, map_location='cpu' if not use_gpu else None)
-            self.policy_value_net.load_state_dict(net_params)
+
             # Infer board dimensions from the loaded model
             inferred_width, inferred_height = self.infer_board_size_from_model(net_params)
             if inferred_width and inferred_height:
-                self.board_width = inferred_width
-                self.board_height = inferred_height
                 self.policy_value_net = Net(inferred_width, inferred_height).cuda() if use_gpu else Net(
                     inferred_width, inferred_height)
-            self.board_width = inferred_width
-            self.board_height = inferred_height
+                self.policy_value_net.load_state_dict(net_params)
+            else:
+                raise Exception("The model file does not contain the board dimensions")
+
+            if inferred_width < board_width:
+                self.use_conv = True
+            elif inferred_width > board_width:
+                raise Exception("The model file has a larger board size than the current board size!!")
         else:
-            self.board_width = board_width
-            self.board_height = board_height
             # the policy value net module
             if self.use_gpu:
                 self.policy_value_net = Net(board_width, board_height).cuda()
@@ -94,11 +98,13 @@ class PolicyValueNet():
 
     def infer_board_size_from_model(self, model):
         # Use the size of the act_fc1 layer to infer board dimensions
-        for name, param in model.named_parameters():
+        for name in model.keys():
             if name == 'act_fc1.weight':
                 # Assuming the weight shape is [board_width * board_height, 4 * board_width * board_height]
-                c, _ = param.shape
-                board_size = int((c / 4) ** 0.5)  # Extracting board_width/height assuming they are the same
+                c, _ = model[name].shape
+                print(f"act_fc1.weight shape: {model[name].shape}")
+                board_size = int(c ** 0.5)  # Extracting board_width/height assuming they are the same
+                print(f"Board size inferred from model: {board_size}x{board_size}")
                 return board_size, board_size
         return None
 
