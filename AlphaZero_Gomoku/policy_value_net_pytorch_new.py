@@ -12,8 +12,6 @@ import torch.optim as optim
 import torch.nn.functional as F
 from torch.autograd import Variable
 import numpy as np
-import numpy as np
-import scipy.stats as stats
 
 
 def set_learning_rate(optimizer, lr):
@@ -22,41 +20,57 @@ def set_learning_rate(optimizer, lr):
         param_group['lr'] = lr
 
 
+
+
+class ResidualBlock(nn.Module):
+    def __init__(self, channels):
+        super(ResidualBlock, self).__init__()
+        self.conv1 = nn.Conv2d(channels, channels, kernel_size=3, padding=1)
+        self.bn1 = nn.BatchNorm2d(channels)
+        self.conv2 = nn.Conv2d(channels, channels, kernel_size=3, padding=1)
+        self.bn2 = nn.BatchNorm2d(channels)
+
+    def forward(self, x):
+        residual = x
+        out = F.relu(self.bn1(self.conv1(x)))
+        out = self.bn2(self.conv2(out))
+        out += residual
+        return F.relu(out)
+
 class Net(nn.Module):
-    """policy-value network module"""
-
-    def __init__(self, board_width, board_height):
+    """Policy-Value network module for AlphaZero Gomoku."""
+    def __init__(self, board_width, board_height, num_residual_blocks=5):
         super(Net, self).__init__()
-
         self.board_width = board_width
         self.board_height = board_height
-        # common layers
         self.conv1 = nn.Conv2d(4, 32, kernel_size=3, padding=1)
-        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
-        self.conv3 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
-        # action policy layers
-        self.act_conv1 = nn.Conv2d(128, 4, kernel_size=1)
-        self.act_fc1 = nn.Linear(4 * board_width * board_height,
-                                 board_width * board_height)
-        # state value layers
-        self.val_conv1 = nn.Conv2d(128, 2, kernel_size=1)
+        self.bn1 = nn.BatchNorm2d(32)
+        self.res_layers = nn.Sequential(*[ResidualBlock(32) for _ in range(num_residual_blocks)])
+
+        # Action Policy layers
+        self.act_conv1 = nn.Conv2d(32, 4, kernel_size=1)
+        self.act_fc1 = nn.Linear(4 * board_width * board_height, board_width * board_height)
+
+        # State Value layers
+        self.val_conv1 = nn.Conv2d(32, 2, kernel_size=1)
         self.val_fc1 = nn.Linear(2 * board_width * board_height, 64)
         self.val_fc2 = nn.Linear(64, 1)
 
-    def forward(self, state_input):
-        # common layers
-        x = F.relu(self.conv1(state_input))
-        x = F.relu(self.conv2(x))
-        x = F.relu(self.conv3(x))
-        # action policy layers
+    def forward(self, x):
+        x = F.relu(self.bn1(self.conv1(x)))
+        x = self.res_layers(x)
+
+        # Action Policy head
         x_act = F.relu(self.act_conv1(x))
         x_act = x_act.view(-1, 4 * self.board_width * self.board_height)
-        x_act = F.log_softmax(self.act_fc1(x_act))
-        # state value layers
+        x_act = F.log_softmax(self.act_fc1(x_act), dim=1)
+
+        # State Value head
         x_val = F.relu(self.val_conv1(x))
         x_val = x_val.view(-1, 2 * self.board_width * self.board_height)
         x_val = F.relu(self.val_fc1(x_val))
-        x_val = F.tanh(self.val_fc2(x_val))
+        x_val = torch.tanh(self.val_fc2(x_val))
+
         return x_act, x_val
 
 
@@ -204,3 +218,15 @@ class PolicyValueNet():
         """ save model params to file """
         net_params = self.get_policy_param()  # get model params
         torch.save(net_params, model_file)
+
+
+if __name__ == "__main__":
+    import torch
+    import torch.onnx
+
+    # 假设您的 Net 模型已经定义好了
+    model = Net(board_width=9, board_height=9)  # 使用适当的参数初始化模型
+    dummy_input = torch.randn(1, 4, 9, 9)  # 创建一个示例输入
+
+    # 将模型导出到 ONNX 格式
+    torch.onnx.export(model, dummy_input, "model.onnx", verbose=True)

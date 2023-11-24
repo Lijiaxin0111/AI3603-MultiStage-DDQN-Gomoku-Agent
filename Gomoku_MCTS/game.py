@@ -321,7 +321,7 @@ class Game(object):
                                         n_playout=self.pure_mcts_playout_num)
 
         pi_eval = PolicyValueNet(self.board.width, self.board.height,
-                                 model_file=r'C:\Users\li_jiaxin\Desktop\AI3603\BGWH\code\AI_3603_BIGHOME\Gomoku+MCTS\checkpoints\best_policy_8_8_5_2torch.pth')
+                                 model_file='/AlphaZero_Gomoku/checkpoint/epochs=1000_size=9_training1/best_policy.model')
         current_mcts_player = MCST_AlphaZero(pi_eval.policy_value_fn,
                                              c_puct=5,
                                              n_playout=self.pure_mcts_playout_num,

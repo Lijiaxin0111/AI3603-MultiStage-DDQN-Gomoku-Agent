@@ -8,7 +8,8 @@ network to guide the tree search and evaluate the leaf nodes
 
 import numpy as np
 import copy
-import time 
+import time
+from config.options import *
 
 
 def softmax(x):
@@ -120,7 +121,7 @@ class MCTS(object):
         # Evaluate the leaf using a network which outputs a list of
         # (action, probability) tuples p and also a score v in [-1, 1]
         # for the current player.
-        action_probs, leaf_value = self._policy(state)
+        action_probs, leaf_value = self._policy(state, bias = opts.biased)
         # Check for end of game.
         end, winner = state.game_end()
         if not end:
