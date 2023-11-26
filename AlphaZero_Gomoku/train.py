@@ -37,7 +37,7 @@ class TrainPipeline():
         # training params 
         self.learn_rate = 2e-3
         self.lr_multiplier = 1.0  # adaptively adjust the learning rate based on KL
-        self.temp = 1.0  # the temperature param
+        self.temp = opts.temp  # the temperature param
         self.n_playout = opts.n_playout  # num of simulations for each move 400 -> 200
         self.c_puct = 5
         self.buffer_size = opts.buffer_size
@@ -53,20 +53,36 @@ class TrainPipeline():
         # the opponent to evaluate the trained policy
         self.pure_mcts_playout_num = 200  # 1000 -> 200
         print("Current Board Size: {}*{}".format(self.board_width, self.board_height))
+        # 生成一个线性间隔的数列
+        linear_space = np.linspace(0, 1, self.game_batch_num)
+        # 应用指数衰减
+        self.temp_exp = opts.temp_exp
+        self.new_net = opts.new_net
+        self.temp_lst = self.temp * np.exp(-linear_space)
         if init_model:
             # start training from an initial policy-value net
-            self.policy_value_net = PolicyValueNet(self.board_width,
+            if self.new_net:
+                self.policy_value_net = PolicyValueNet_New(self.board_width,
+                                                           self.board_height,
+                                                           model_file=init_model)
+                print("loaded new policy_value_net")
+            else:
+                self.policy_value_net = PolicyValueNet(self.board_width,
                                                    self.board_height,
                                                    model_file=init_model)
-
+                print("loaded old policy_value_net")
 
         else:
+            if self.new_net:
+                self.policy_value_net = PolicyValueNet_New(self.board_width,
+                                                           self.board_height)
+                print("using new policy_value_net")
             # start training from a new policy-value net
-            # self.policy_value_net = PolicyValueNet(self.board_width,
-            #                                        self.board_height)
-            self.policy_value_net = PolicyValueNet_New(self.board_width,
-                                                       self.board_height)
-            print("using new policy_value_net")
+            else:
+             self.policy_value_net = PolicyValueNet(self.board_width,
+                                                   self.board_height)
+
+            print("using old policy_value_net")
         self.mcts_player = MCTSPlayer(self.policy_value_net.policy_value_fn,
                                       c_puct=self.c_puct,
                                       n_playout=self.n_playout,
@@ -166,7 +182,7 @@ class TrainPipeline():
 
         # use former trained model as opponent
         pi_eval = PolicyValueNet(self.board.width, self.board.height,
-                                 model_file=opts.preload_model)
+                                 model_file="'/Users/husky/AI_3603_BIGHOME/AlphaZero_Gomoku/checkpoint/epochs=1500_size=9_training2/best_policy.model'")
         pure_mcts_player = MCTSPlayer(pi_eval.policy_value_fn,
                                       c_puct=self.c_puct,
                                       n_playout=self.pure_mcts_playout_num,
@@ -190,6 +206,9 @@ class TrainPipeline():
         try:
             batch_bar = tqdm(range(self.game_batch_num), desc="total epochs", ncols=100)
             for i in batch_bar:
+                if self.temp_exp:
+                    self.temp = self.temp_lst[i]
+                    print("====using temp_exp decreasing=====")
                 self.collect_selfplay_data(self.play_batch_size)
 
                 if len(self.data_buffer) > self.batch_size:
@@ -228,7 +247,7 @@ class TrainPipeline():
 
 if __name__ == '__main__':
     writer = visualizer()
-    # training_pipeline = TrainPipeline()
-    training_pipeline = TrainPipeline(init_model=opts.preload_model)
+    training_pipeline = TrainPipeline()
+    # training_pipeline = TrainPipeline(init_model=opts.preload_model)
     training_pipeline.run()
     training_pipeline.policy_evaluate()
