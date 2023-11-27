@@ -79,10 +79,10 @@ class TrainPipeline():
                 print("using new policy_value_net")
             # start training from a new policy-value net
             else:
-             self.policy_value_net = PolicyValueNet(self.board_width,
+                self.policy_value_net = PolicyValueNet(self.board_width,
                                                    self.board_height)
 
-            print("using old policy_value_net")
+                print("using old policy_value_net")
         self.mcts_player = MCTSPlayer(self.policy_value_net.policy_value_fn,
                                       c_puct=self.c_puct,
                                       n_playout=self.n_playout,
@@ -182,7 +182,7 @@ class TrainPipeline():
 
         # use former trained model as opponent
         pi_eval = PolicyValueNet(self.board.width, self.board.height,
-                                 model_file="'/Users/husky/AI_3603_BIGHOME/AlphaZero_Gomoku/checkpoint/epochs=1500_size=9_training2/best_policy.model'")
+                                 model_file="/Users/husky/AI_3603_BIGHOME/AlphaZero_Gomoku/checkpoint/epochs=1500_size=9_training2/best_policy.model")
         pure_mcts_player = MCTSPlayer(pi_eval.policy_value_fn,
                                       c_puct=self.c_puct,
                                       n_playout=self.pure_mcts_playout_num,
@@ -229,7 +229,7 @@ class TrainPipeline():
 
                     batch_bar.set_description(f"game batch num {i + 1}")
                     writer.add_scalar("evaluate/explained_var_new ", win_ratio, i)
-                    batch_bar.set_postfix(loss=loss, entropy=entropy, win_ratio=win_ratio)
+                    # batch_bar.set_postfix(loss=loss, entropy=entropy, win_ratio=win_ratio)
 
                     save_model(self.policy_value_net.policy_value_net, "current_policy.model")
                     if win_ratio > self.best_win_ratio:
