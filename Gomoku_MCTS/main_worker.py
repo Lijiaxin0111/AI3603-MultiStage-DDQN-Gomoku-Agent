@@ -94,6 +94,7 @@ class MainWorker():
 
 
         if opts.preload_model:
+            
             # start training from an initial policy-value net
             self.policy_value_net = PolicyValueNet(self.board_width,
                                                    self.board_height,
@@ -250,11 +251,13 @@ class MainWorker():
             policy_loss = -torch.mean(torch.sum(mcts_probs*log_act_probs, 1))
 
 
+
+
             # if the player is Gumbel player, policy loss is 
-            if opts.Player ==1 :
-                policy_loss = torch.mean( (torch.sum(mcts_probs * (
-                    np.log(mcts_probs + 1e-10) - log_act_probs),
-                    axis=1)))
+            # if opts.Player ==1 :
+            #     policy_loss = torch.mean( (torch.sum(mcts_probs * (
+            #         np.log(mcts_probs + 1e-10) - log_act_probs),
+            #         axis=1)))
 
             loss = value_loss + policy_loss
 
@@ -296,7 +299,7 @@ class MainWorker():
                              np.var(np.array(winner_batch)))
         
 
-        return kl, loss, entropy, explained_var_old, explained_var_new
+        return kl, loss, entropy, explained_var_old, explained_var_new ,value_loss , policy_loss
 
     def policy_evaluate(self, n_games=10):
         """
@@ -397,10 +400,12 @@ class MainWorker():
                     self.collect_selfplay_data(self.play_batch_size)
                 # print("Done")
                 if len(self.data_buffer) > self.batch_size:
-                    kl,  loss, entropy,explained_var_old, explained_var_new = self.policy_update()
+                    kl,  loss, entropy,explained_var_old, explained_var_new ,value_loss , policy_loss = self.policy_update()
 
                     writer.add_scalar("policy_update/kl", kl ,i )
                     writer.add_scalar("policy_update/loss", loss ,i)
+                    writer.add_scalar("policy_update/value_loss", value_loss ,i)
+                    writer.add_scalar("policy_update/policy_loss", policy_loss ,i)
                     writer.add_scalar("policy_update/entropy", entropy ,i)
                     writer.add_scalar("policy_update/explained_var_old", explained_var_old,i)
                     writer.add_scalar("policy_update/explained_var_new ", explained_var_new ,i)
