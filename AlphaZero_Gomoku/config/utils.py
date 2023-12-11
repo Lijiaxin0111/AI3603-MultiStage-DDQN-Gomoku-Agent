@@ -6,10 +6,10 @@ import torch.distributed as dist
 import time
 
 """ ==================== Save ======================== """
-
+date = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
 def make_path():
-    print(opts.game_batch_num, opts.board_width)
-    return "epochs={}_size={}_biased={}_simultime={}".format(opts.game_batch_num, opts.board_width,opts.biased, opts.n_playout)
+    print("{}_epochs={}_size={}_biased={}_simultime={}_temp={}_exp={}_net={}".format(date, opts.game_batch_num, opts.board_width,opts.biased, opts.n_playout,opts.temp,opts.temp_exp,opts.new_net))
+    return "{}_epochs={}_size={}_biased={}_simultime={}_temp={}_exp={}_net={}".format(date,opts.game_batch_num, opts.board_width,opts.biased, opts.n_playout,opts.temp,opts.temp_exp,opts.new_net)
 
 
 
