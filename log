@@ -1,0 +1,4 @@
+train_raw_15: 3000, biased = True, old network
+train_raw_12: 500, biased = True, old network
+train_alpha_zero : 3000, biased = False, old network
+
