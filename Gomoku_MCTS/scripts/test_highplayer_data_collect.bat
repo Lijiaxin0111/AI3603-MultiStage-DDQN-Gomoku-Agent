@@ -2,7 +2,7 @@
 
 
 
-set train_options=--expri test_Alphazero_high_collect ^
+set train_options=--expri test_teaching_learning_collect ^
 --split train ^
 --Player 0 ^
 --batch_size 512 ^
@@ -11,7 +11,8 @@ set train_options=--expri test_Alphazero_high_collect ^
 --board_height 9 ^
 --use_gpu 0 ^
 --mood 0  ^
---highplayer_collect 1 ^
+--data_collect 2 ^
+--check_freq 500 ^
 
 
 --game_batch_num 2000 ^

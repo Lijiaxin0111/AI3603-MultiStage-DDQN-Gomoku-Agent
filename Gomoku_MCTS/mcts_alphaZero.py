@@ -272,6 +272,7 @@ class MCTSPlayer(object):
                 move = np.random.choice(acts, p=probs)
                 # reset the root node
                 self.mcts.update_with_move(-1)
+            
             #                location = board.move_to_location(move)
             #                print("AI move: %d,%d\n" % (location[0], location[1]))
             

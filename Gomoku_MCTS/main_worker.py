@@ -121,7 +121,7 @@ class MainWorker():
                                         m_action= self.m)
             print("[Now] The MCTS PLATER: Gumbel_Alphazero ")
 
-        if opts.highplayer_collect:
+        if opts.data_collect == 1:
             self.high_player = MCTSPlayer(self.policy_value_net.policy_value_fn,
                                         c_puct=self.c_puct,
                                         n_playout=self.n_playout)
@@ -172,6 +172,7 @@ class MainWorker():
         play_data = self.get_equi_data(play_data)
       
         return play_data
+   
     
     def job_highplay(self, i):
         game = self.game
@@ -187,6 +188,23 @@ class MainWorker():
         play_data = self.get_equi_data(play_data)
       
         return play_data
+    
+    
+    def parser_output(self,outflies,n_games):
+
+        ignore_opening_random = 3
+
+        for i in range(n_games): 
+            game = self.game
+            winner, play_data = game.start_parser(outflies[i])
+            print("[DATA] get_data from ", outflies[i])
+
+            play_data = list(play_data)[ignore_opening_random:]
+        
+            play_data = self.get_equi_data(play_data)
+            self.data_buffer.extend(play_data)
+
+        # return play_data  
 
     def collect_selfplay_data(self, n_games=1):
         """collect self-play data for training"""
@@ -214,6 +232,8 @@ class MainWorker():
                 play_datas = p.map(self.job_highplay, collection_bar)
             for play_data in play_datas:
                 self.data_buffer.extend(play_data)
+
+    
 
     def policy_update(self):
         """update the policy-value net"""
@@ -391,13 +411,22 @@ class MainWorker():
 
             batch_bar = tqdm(range(self.game_batch_num))
             for i in batch_bar:
-                if opts.highplayer_collect:
+                if opts.data_collect == 1:
                     self.mcts_player._is_selfplay = 0
                     self.collect_highplay_data(self.play_batch_size)
                     # print("[Done] collect high")
+                elif opts.data_collect == 2:
+                    ouput_dir = r"C:\Users\li_jiaxin\Desktop\AI3603\BGWH\code\AI_3603_BIGHOME\generate_data\data"
+                    files = os.listdir(ouput_dir)
+                    random_files = random.sample(files, self.play_batch_size)
+                    random_files = [ouput_dir + "\\"+ file for file in random_files ] 
+                    
+                    
+                    self.parser_output(random_files,self.play_batch_size)
                 
                 else:
                     self.collect_selfplay_data(self.play_batch_size)
+
                 # print("Done")
                 if len(self.data_buffer) > self.batch_size:
                     kl,  loss, entropy,explained_var_old, explained_var_new ,value_loss , policy_loss = self.policy_update()

@@ -308,6 +308,133 @@ class Game(object):
                         print("Game end. Tie")
                 return winner, zip(states, mcts_probs, winners_z)
 
+    def start_parser(self, out_file,is_shown = 0):
+        """
+        move by the out_file, get the data
+        """
+        self.board.init_board()
+        p1, p2 = self.board.players
+
+        with open(out_file,"r") as file:
+            moves = file.readlines()
+        # print("out::", moves)
+   
+        cnt = 2
+
+        states, mcts_probs, current_players = [], [], []
+
+        while True:
+            move_probs = np.zeros(self.board.width * self.board.height)
+            move = moves[cnt]
+            cnt += 1
+
+
+            move = move.split(',')
+     
+            # print(out_file)
+            if move[0] == "0\n":
+                # print(move)
+                winner = -1
+                end = True
+            else:
+            
+          
+            
+ 
+        
+                move = int(move[0]) + int(move[1])* self.board.width 
+
+        
+                move_probs[move] = 1
+
+                
+
+                # store the data
+                states.append(self.board.current_state())
+                mcts_probs.append(move_probs)
+                current_players.append(self.board.current_player)
+                # perform a move
+                self.board.do_move(move)
+                if is_shown:
+                    self.graphic(self.board, p1, p2)
+                end, winner = self.board.game_end()
+
+            if end:
+                # winner from the perspective of the current player of each state
+                winners_z = np.zeros(len(current_players))
+                if winner != -1:
+                    winners_z[np.array(current_players) == winner] = 1.0
+                    winners_z[np.array(current_players) != winner] = -1.0
+           
+                if is_shown:
+                    if winner != -1:
+                        print("Game end. Winner is player:", winner)
+                    else:
+                        print("Game end. Tie")
+                return winner, zip(states, mcts_probs, winners_z)
+        
+    def start_play_collect(self, player1_train, player2_high, is_shown = 0, temp = 1e-3,start_player = 0):
+        """
+        start a self-play game using a MCTS player, reuse the search tree,
+        and store the self-play data: (state, mcts_probs, z) for training
+        """
+            
+        """start a game between two players, store the self-play data: (state, mcts_probs, z) for training"""
+        if start_player not in (0, 1):
+            raise Exception('start_player should be either 0 (player1 first) '
+                            'or 1 (player2 f1irst)')
+        
+        self.board.init_board(start_player)
+        p1, p2 = self.board.players
+        player1_train.set_player_ind(p1)
+        player2_high.set_player_ind(p2)
+        players = {p1: player1_train, p2: player2_high}
+        states, mcts_probs, current_players = [], [], []
+        while True:
+            current_player = self.board.get_current_player()
+         
+            player_in_turn = players[current_player]
+
+            if current_player == p2:
+                move = player_in_turn.get_action(self.board)
+                current_players.append(self.board.current_player)
+                
+             
+
+            elif current_player == p1:
+                move,move_probs = player_in_turn.get_action(self.board,
+                                                 temp=temp,
+                                                 return_prob=1)
+                states.append(self.board.current_state())
+                mcts_probs.append(move_probs)
+                current_players.append(self.board.current_player)
+            
+          
+                
+                # print(self.board.availables)
+
+            self.board.do_move(move)
+            if is_shown:
+                self.graphic(self.board, p1, p2)
+            end, winner = self.board.game_end()
+
+            if end:
+                winners_z = np.zeros(len(current_players))
+                if winner != -1:
+                    winners_z[np.array(current_players) == winner] = 1.0
+                    winners_z[np.array(current_players) != winner] = -1.0
+                # reset MCTS root node
+                    
+                player1_train.reset_player()
+                winners_z = winners_z[np.array(current_players) == p1]
+
+                if is_shown:
+                    if winner != -1:
+                        print("Game end. Winner is player:", winner)
+                    else:
+                        print("Game end. Tie")
+                return winner, zip(states, mcts_probs, winners_z)
+
 
 
     # 多了下面这一串测试代码
@@ -321,7 +448,7 @@ class Game(object):
                                         n_playout=self.pure_mcts_playout_num)
 
         pi_eval = PolicyValueNet(self.board.width, self.board.height,
-                                 model_file='/AlphaZero_Gomoku/checkpoint/epochs=1000_size=9_training1/best_policy.model')
+                                 model_file=r'Gomoku_MCTS\checkpoint\test_Alphazero_high_collect_epochs=1000_size=9\best_policy.model')
         current_mcts_player = MCST_AlphaZero(pi_eval.policy_value_fn,
                                              c_puct=5,
                                              n_playout=self.pure_mcts_playout_num,

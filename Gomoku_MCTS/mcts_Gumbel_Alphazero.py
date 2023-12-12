@@ -64,8 +64,6 @@ class TreeNode(object):
         # print(v_pi)
         
 
-        
-
         max_N_b = np.max(np.array( [act_node[1]._n_visits   for act_node in   self._children.items()]))
 
         if opts.split == "train":
