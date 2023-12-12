@@ -94,6 +94,7 @@ class MainWorker():
 
 
         if opts.preload_model:
+            
             # start training from an initial policy-value net
             self.policy_value_net = PolicyValueNet(self.board_width,
                                                    self.board_height,
@@ -120,7 +121,7 @@ class MainWorker():
                                         m_action= self.m)
             print("[Now] The MCTS PLATER: Gumbel_Alphazero ")
 
-        if opts.highplayer_collect:
+        if opts.data_collect == 1:
             self.high_player = MCTSPlayer(self.policy_value_net.policy_value_fn,
                                         c_puct=self.c_puct,
                                         n_playout=self.n_playout)
@@ -171,6 +172,7 @@ class MainWorker():
         play_data = self.get_equi_data(play_data)
       
         return play_data
+   
     
     def job_highplay(self, i):
         game = self.game
@@ -186,6 +188,23 @@ class MainWorker():
         play_data = self.get_equi_data(play_data)
       
         return play_data
+    
+    
+    def parser_output(self,outflies,n_games):
+
+        ignore_opening_random = 3
+
+        for i in range(n_games): 
+            game = self.game
+            winner, play_data = game.start_parser(outflies[i])
+            print("[DATA] get_data from ", outflies[i])
+
+            play_data = list(play_data)[ignore_opening_random:]
+        
+            play_data = self.get_equi_data(play_data)
+            self.data_buffer.extend(play_data)
+
+        # return play_data  
 
     def collect_selfplay_data(self, n_games=1):
         """collect self-play data for training"""
@@ -213,6 +232,8 @@ class MainWorker():
                 play_datas = p.map(self.job_highplay, collection_bar)
             for play_data in play_datas:
                 self.data_buffer.extend(play_data)
+
+    
 
     def policy_update(self):
         """update the policy-value net"""
@@ -250,11 +271,13 @@ class MainWorker():
             policy_loss = -torch.mean(torch.sum(mcts_probs*log_act_probs, 1))
 
 
+
+
             # if the player is Gumbel player, policy loss is 
-            if opts.Player ==1 :
-                policy_loss = torch.mean( (torch.sum(mcts_probs * (
-                    np.log(mcts_probs + 1e-10) - log_act_probs),
-                    axis=1)))
+            # if opts.Player ==1 :
+            #     policy_loss = torch.mean( (torch.sum(mcts_probs * (
+            #         np.log(mcts_probs + 1e-10) - log_act_probs),
+            #         axis=1)))
 
             loss = value_loss + policy_loss
 
@@ -296,7 +319,7 @@ class MainWorker():
                              np.var(np.array(winner_batch)))
         
 
-        return kl, loss, entropy, explained_var_old, explained_var_new
+        return kl, loss, entropy, explained_var_old, explained_var_new ,value_loss , policy_loss
 
     def policy_evaluate(self, n_games=10):
         """
@@ -388,19 +411,30 @@ class MainWorker():
 
             batch_bar = tqdm(range(self.game_batch_num))
             for i in batch_bar:
-                if opts.highplayer_collect:
+                if opts.data_collect == 1:
                     self.mcts_player._is_selfplay = 0
                     self.collect_highplay_data(self.play_batch_size)
                     # print("[Done] collect high")
+                elif opts.data_collect == 2:
+                    ouput_dir = r"C:\Users\li_jiaxin\Desktop\AI3603\BGWH\code\AI_3603_BIGHOME\generate_data\data"
+                    files = os.listdir(ouput_dir)
+                    random_files = random.sample(files, self.play_batch_size)
+                    random_files = [ouput_dir + "\\"+ file for file in random_files ] 
+                    
+                    
+                    self.parser_output(random_files,self.play_batch_size)
                 
                 else:
                     self.collect_selfplay_data(self.play_batch_size)
+
                 # print("Done")
                 if len(self.data_buffer) > self.batch_size:
-                    kl,  loss, entropy,explained_var_old, explained_var_new = self.policy_update()
+                    kl,  loss, entropy,explained_var_old, explained_var_new ,value_loss , policy_loss = self.policy_update()
 
                     writer.add_scalar("policy_update/kl", kl ,i )
                     writer.add_scalar("policy_update/loss", loss ,i)
+                    writer.add_scalar("policy_update/value_loss", value_loss ,i)
+                    writer.add_scalar("policy_update/policy_loss", policy_loss ,i)
                     writer.add_scalar("policy_update/entropy", entropy ,i)
                     writer.add_scalar("policy_update/explained_var_old", explained_var_old,i)
                     writer.add_scalar("policy_update/explained_var_new ", explained_var_new ,i)

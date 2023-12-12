@@ -176,6 +176,20 @@ class MCTS(object):
         ### end test multi-thread
 
         t = time.time()
+        #  ---------
+        act_probs, leaf_value = self._policy(state)
+        
+        act_probs =  list(act_probs)
+
+        leaf_value = leaf_value.detach().numpy()[0][0]
+        
+        # print(list(act_probs))
+        porbs = [prob  for act,prob in (act_probs)]
+        # print("net ",porbs)
+        # print("net_arg:",np.argmax(porbs))
+        
+        #  ---------
+
         
         for n in range(self._n_playout):
             start_time = time.time()
@@ -196,7 +210,7 @@ class MCTS(object):
         acts, visits = zip(*act_visits)
 
         act_probs = softmax(1.0 / temp * np.log(np.array(visits) + 1e-10))
-
+     
         return 0, acts, act_probs, total_time
 
     def update_with_move(self, last_move):
@@ -235,6 +249,9 @@ class MCTSPlayer(object):
             _, acts, probs, simul_mean_time = self.mcts.get_move_probs(board, temp)
 
             move_probs[list(acts)] = probs
+            # print("return", move_probs)
+            # print("return_max", np.argmax(move_probs))
+
     
             if opts.board_cut :
                 move_probs = board_cut(board,move_probs)
@@ -255,13 +272,15 @@ class MCTSPlayer(object):
                 move = np.random.choice(acts, p=probs)
                 # reset the root node
                 self.mcts.update_with_move(-1)
+            
             #                location = board.move_to_location(move)
             #                print("AI move: %d,%d\n" % (location[0], location[1]))
             
             
 #                location = board.move_to_location(move)
 #                print("AI move: %d,%d\n" % (location[0], location[1]))
-      
+            # print("final move", move)
+
 
             if return_time:
 

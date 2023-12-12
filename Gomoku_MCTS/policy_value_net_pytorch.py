@@ -97,6 +97,7 @@ class PolicyValueNet():
 
         if model_file:
             net_params = torch.load(model_file, map_location='cpu' if not use_gpu else None)
+            
 
             # Infer board dimensions from the loaded model
             inferred_width, inferred_height = self.infer_board_size_from_model(net_params)

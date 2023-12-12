@@ -163,6 +163,8 @@ class MCTS(object):
         Return: the selected action
         """
         start_time = time.time()
+
+
         # n_playout 探索的次数
         for n in range(self._n_playout):
             state_copy = copy.deepcopy(state)

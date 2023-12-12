@@ -1,5 +1,5 @@
 """
-FileName: main_worker.py
+FileName: mcts_Gumbel_Alphazero.py
 Author: Jiaxin Li
 Create Date: 2023/11/21
 Description: The implement of  Gumbel MCST 
@@ -64,8 +64,6 @@ class TreeNode(object):
         # print(v_pi)
         
 
-        
-
         max_N_b = np.max(np.array( [act_node[1]._n_visits   for act_node in   self._children.items()]))
 
         if opts.split == "train":
@@ -96,8 +94,6 @@ class TreeNode(object):
         # Update Q, a running average of values for all visits.
         if opts.split == "train":
             self._Q = self._Q +  (1.0*(leaf_value  - self._Q ) / self._n_visits)
-         
-            
         else: 
             self._Q += (1.0*(leaf_value - self._Q) / self._n_visits)
 
@@ -216,9 +212,6 @@ class Gumbel_MCTS(object):
     def sample_k(self,logits, k):
         u = np.random.uniform(size=np.shape(logits))
         z = -np.log(-np.log(u))
-
-  
-        
         return self.top_k(logits + z, k),z
 
 
@@ -232,11 +225,10 @@ class Gumbel_MCTS(object):
         # logits 暂定为 p
 
         start_time = time.time()
-
-
         # 对根节点进行拓展
         
         act_probs, leaf_value = self._policy(state)
+        
         act_probs =  list(act_probs)
 
         leaf_value = leaf_value.detach().numpy()[0][0]
@@ -246,8 +238,7 @@ class Gumbel_MCTS(object):
 
 
         self._root.expand(act_probs)
-
-
+    
         n = self._n_playout
         m = min( m_action,int(len( porbs) / 2))
 
@@ -257,7 +248,6 @@ class Gumbel_MCTS(object):
         
         # 获得state选取每个action后对应的状态，保存到一个列表中
         root_childs = list(self._root._children.items())
- 
 
         child_state_m = []
         for i in range(m):
@@ -265,14 +255,22 @@ class Gumbel_MCTS(object):
             action,node = root_childs[A_topm[i]]
             state_copy.do_move(action)
             child_state_m.append(state_copy)
+        print(porbs)
 
-           
-        # 每轮对选择的动作进行的仿真次数
-        N = int( n /( np.log(m) * m ))
+        print("depend on:",  np.array(porbs)[A_topm] )
+        print(f"A_topm_{m}", A_topm)
+
+        print("m ",m)
+
+        if m > 1:
+            # 每轮对选择的动作进行的仿真次数
+            N = int( n /( np.log(m) * m ))
+        else:
+            N = n
 
         # 进行sequential halving with Gumbel 
         while m >= 1:
-        
+
             # 对每个选择的动作进行仿真
             for i in range(m):
                 action_state = child_state_m[i]
@@ -301,9 +299,10 @@ class Gumbel_MCTS(object):
             
        
             q_hat = np.array([action_node[1]._Q for action_node in self._root._children.items()  ])
-            
-
             assert(np.sum(q_hat[A_topm] == 0) == 0  )
+
+            print("depend on:",np.array(porbs)[A_topm]  +  np.array(g)[A_topm]  +  q_hat[A_topm] )
+            print(f"A_topm_{m}", A_topm)
 
             A_index = self.top_k( np.array(porbs)[A_topm] +  np.array(g)[A_topm]  +  q_hat[A_topm]  , m)
             A_topm = np.array(A_topm)[A_index]
@@ -315,10 +314,17 @@ class Gumbel_MCTS(object):
         max_N_b = np.max(np.array( [act_node[1]._n_visits   for act_node in   self._root._children.items()]  ))
 
         final_act_probs=    softmax( np.array( [ act_node[1].get_pi(leaf_value, max_N_b)   for act_node in   self._root._children.items() ]))
-        action =  ( np.array( [ act_node[0]   for act_node in   self._root._children.items() ]))
 
+
+        action =  ( np.array( [ act_node[0]   for act_node in   self._root._children.items() ]))
+        print("final_act_prbs",final_act_probs)
+        print("move :", action)
+        print("final_action", np.array(list(self._root._children.items()))[A_topm][0][0])
+        print("argmax_prob",np.argmax(final_act_probs))
         need_time = time.time() - start_time
         print(f" Gumbel Alphazero sum_time: {need_time  }, total_simulation: {self._n_playout}")
+
+        
 
         return   np.array(list(self._root._children.items()))[A_topm][0][0], action,  final_act_probs , need_time
 
@@ -365,11 +371,27 @@ class Gumbel_MCTSPlayer(object):
             # 在搜索树中利用sequential halving with Gumbel 来进行动作选择 并且返回对应的决策函数
             move, acts, probs,simul_mean_time  = self.mcts.get_move_probs(board, temp,self.m_action)
 
+        
+            
+
      
             # 重置搜索树
             self.mcts.update_with_move(-1)
 
             move_probs[list(acts)] = probs
+            move_probs = np.zeros(move_probs.shape[0])
+            move_probs[move] = 1
+            
+            print("final prob:", move_probs)
+            print("arg_max:",np.argmax(move_probs))
+            print("max",np.max(move_probs))
+            print("move",move)
+
+            # 他通过训练能够使得最后move_probs 有一个位置趋近于1,即得到一个策略
+            # 关键是他的策略,和MCTS得到move不一致,怀疑是分布策略计算的问题
+
+
+            
 
             if return_time:
 
