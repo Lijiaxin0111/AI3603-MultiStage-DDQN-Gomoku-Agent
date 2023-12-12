@@ -15,8 +15,8 @@ from mcts_pure import MCTSPlayer as MCTS_Pure
 from mcts_pure import Human_Player
 from mcts_alphaZero import MCTSPlayer as MCST_AlphaZero
 from collections import defaultdict
-from policy_value_net_pytorch import PolicyValueNet
-# from dueling_net import PolicyValueNet
+# from policy_value_net_pytorch import PolicyValueNet
+from dueling_net import PolicyValueNet
 
 class Board(object):
     """board for the game"""
@@ -448,7 +448,7 @@ class Game(object):
                                         n_playout=self.pure_mcts_playout_num)
 
         pi_eval = PolicyValueNet(self.board.width, self.board.height,
-                                 model_file=r'Gomoku_MCTS\checkpoint\test_Alphazero_high_collect_epochs=1000_size=9\best_policy.model')
+                                 model_file=r'Gomoku_MCTS\checkpoint\test_teaching_learning_collect_epochs=1000_size=9\best_policy.model')
         current_mcts_player = MCST_AlphaZero(pi_eval.policy_value_fn,
                                              c_puct=5,
                                              n_playout=self.pure_mcts_playout_num,
@@ -472,8 +472,8 @@ class Game(object):
 
 
 if __name__ == '__main__':
-    board_width = 8
-    board_height = 8
+    board_width = 9
+    board_height = 9
     n_in_row = 5
     board = Board(width=board_width,
                   height=board_height,

@@ -98,9 +98,11 @@ class PolicyValueNet():
         if model_file:
             net_params = torch.load(model_file, map_location='cpu' if not use_gpu else None)
             
+            
 
             # Infer board dimensions from the loaded model
             inferred_width, inferred_height = self.infer_board_size_from_model(net_params)
+
             if inferred_width and inferred_height:
                 self.policy_value_net = Net(inferred_width, inferred_height).cuda() if use_gpu else Net(
                     inferred_width, inferred_height)
@@ -132,7 +134,7 @@ class PolicyValueNet():
                 board_size = int(c ** 0.5)  # Extracting board_width/height assuming they are the same
                 print(f"Board size inferred from model: {board_size}x{board_size}")
                 return board_size, board_size
-        return None
+        return None, None
 
     def apply_normal_bias(self, tensor, mean=0, std=1):
         bsize = tensor.shape[0]

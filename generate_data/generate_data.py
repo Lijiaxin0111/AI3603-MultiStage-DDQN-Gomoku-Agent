@@ -1,6 +1,18 @@
+"""
+FileName: generate
+Author: Jiaxin Li
+Create Date: 2023/11/21
+Description: 生成对弈数据:单线程 多线程（有点卡）
+Edit History:
+Debug: the dim of output: probs
+"""
+
+
+
 import subprocess
 import sys
 import random
+
 
 # 获取命令行参数
 

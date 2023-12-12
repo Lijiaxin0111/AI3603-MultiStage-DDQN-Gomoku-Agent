@@ -164,7 +164,6 @@ class MCTS(object):
         """
         start_time = time.time()
 
-
         # n_playout 探索的次数
         for n in range(self._n_playout):
             state_copy = copy.deepcopy(state)
@@ -238,10 +237,19 @@ class Human_Player(object):
         if len(sensible_moves) > 0:
             # print(sensible_moves)
         
-            move = int(input("Input the move:"))
+            move = (input("Input the move:"))
+            move = move.split(' ')
+            move = (int(move[0])* board.width) + int( move[1])
+
+
+            
+
+
             while (move not in sensible_moves ):
                 print(sensible_moves)
-                move = int(input("Input the move again:"))
+                move = (input("Input the move:"))
+                move = move.split(' ')
+                move = (int(move[0])* board.width) + int( move[1])
             return move
         else:
             print("WARNING: the board is full")

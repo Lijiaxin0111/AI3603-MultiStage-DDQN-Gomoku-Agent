@@ -453,6 +453,7 @@ class MainWorker():
                     batch_bar.set_postfix(loss= loss, entropy= entropy,win_ratio =win_ratio)
 
                     save_model(self.policy_value_net.policy_value_net,"current_policy.model")
+                    
                     if win_ratio > self.best_win_ratio:
                         print("New best policy!!!!!!!!")
                         print("best win_ratio: ", self.best_win_ratio)
