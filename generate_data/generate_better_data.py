@@ -20,7 +20,8 @@ import os
 thread_num = 2
 
 episode = 200
-cnt = 201
+cnt = 250
+
 
 pis_root = r"D:\Program_File\piskvork\piskvork_win_lose"
 
@@ -40,9 +41,10 @@ ai_list = os.listdir(ai_root)
 for i in range(episode):
 
     # 随机获取ai
+
     ai1 = os.path.join(ai_root, random.sample(ai_list,k=1)[0])
     ai2 = os.path.join(ai_root, random.sample(ai_list,k=1)[0])
-    
+    print(ai1 + "  vs   " + ai2) 
 
     cnt += 1
 

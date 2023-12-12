@@ -1,0 +1,9 @@
+pbrain-wine.exe
+pbrain-SlowRenju_x64.exe
+4,4,0
+5,4,1
+2,5,0
+5,5,0
+6,6,0
+5,3,2627
+0
