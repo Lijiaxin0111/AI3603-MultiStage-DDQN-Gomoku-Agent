@@ -14,9 +14,12 @@ import numpy as np
 from mcts_pure import MCTSPlayer as MCTS_Pure
 from mcts_pure import Human_Player
 from mcts_alphaZero import MCTSPlayer as MCST_AlphaZero
+from mcts_Gumbel_Alphazero import Gumbel_MCTSPlayer as MCST_Gumbel_AlphaZero
 from collections import defaultdict
 from policy_value_net_pytorch import PolicyValueNet
+from policy_value_net_pytorch_new import PolicyValueNet as PolicyValueNet_new
 # from dueling_net import PolicyValueNet
+
 
 class Board(object):
     """board for the game"""
@@ -197,7 +200,7 @@ class Game(object):
             current_player = self.board.get_current_player()
             player_in_turn = players[current_player]
             move = player_in_turn.get_action(self.board)
-     
+
             self.board.do_move(move)
             if is_shown:
                 self.graphic(self.board, player1.player, player2.player)
@@ -245,18 +248,18 @@ class Game(object):
                     else:
                         print("Game end. Tie")
                 return winner, zip(states, mcts_probs, winners_z)
-        
+
     def start_play_collect(self, player1_train, player2_high, is_shown = 0, temp = 1e-3,start_player = 0):
         """
         start a self-play game using a MCTS player, reuse the search tree,
         and store the self-play data: (state, mcts_probs, z) for training
         """
-            
+
         """start a game between two players, store the self-play data: (state, mcts_probs, z) for training"""
         if start_player not in (0, 1):
             raise Exception('start_player should be either 0 (player1 first) '
                             'or 1 (player2 f1irst)')
-        
+
         self.board.init_board(start_player)
         p1, p2 = self.board.players
         player1_train.set_player_ind(p1)
@@ -265,14 +268,14 @@ class Game(object):
         states, mcts_probs, current_players = [], [], []
         while True:
             current_player = self.board.get_current_player()
-         
+
             player_in_turn = players[current_player]
 
             if current_player == p2:
                 move = player_in_turn.get_action(self.board)
                 current_players.append(self.board.current_player)
-                
-             
+
+
 
             elif current_player == p1:
                 move,move_probs = player_in_turn.get_action(self.board,
@@ -281,9 +284,9 @@ class Game(object):
                 states.append(self.board.current_state())
                 mcts_probs.append(move_probs)
                 current_players.append(self.board.current_player)
-            
-          
-                
+
+
+
                 # print(self.board.availables)
 
             self.board.do_move(move)
@@ -297,7 +300,7 @@ class Game(object):
                     winners_z[np.array(current_players) == winner] = 1.0
                     winners_z[np.array(current_players) != winner] = -1.0
                 # reset MCTS root node
-                    
+
                 player1_train.reset_player()
                 winners_z = winners_z[np.array(current_players) == p1]
 
@@ -317,15 +320,29 @@ class Game(object):
         Evaluate the trained policy by playing against the pure MCTS player
         Note: this is only for monitoring the progress of training
         """
-        current_mcts_player = MCTS_Pure(c_puct=5,
-                                        n_playout=self.pure_mcts_playout_num)
+        # current_mcts_player = MCTS_Pure(c_puct=5,
+        #                                 n_playout=self.pure_mcts_playout_num)
 
+        pi_eval_old = PolicyValueNet(self.board.width, self.board.height,
+                                 model_file='/Users/husky/AI_3603_BIGHOME/AlphaZero_Gomoku/checkpoint/epochs=1500_size=9_training2/best_policy.model',bias=True)
         pi_eval = PolicyValueNet(self.board.width, self.board.height,
-                                 model_file='/AlphaZero_Gomoku/checkpoint/epochs=1000_size=9_training1/best_policy.model')
+                                     model_file="/Users/husky/AI_3603_BIGHOME/AlphaZero_Gomoku/checkpoint/epochs=3000_size=9_biased=True_simultime=500/current_policy.model")
+        # pi_new_net = PolicyValueNet_new(self.board.width, self.board.height,model_file="/Users/husky/AI_3603_BIGHOME/AlphaZero_Gomoku/checkpoint/epochs=3000_size=9_biased=True_simultime=250_new_network/best_policy.model")
         current_mcts_player = MCST_AlphaZero(pi_eval.policy_value_fn,
                                              c_puct=5,
-                                             n_playout=self.pure_mcts_playout_num,
+                                             n_playout=400,
                                              is_selfplay=0)
+        # pure_mcts_player = MCST_AlphaZero(pi_eval_old.policy_value_fn,
+        #                                   c_puct=5,
+        #                                   n_playout=self.pure_mcts_playout_num,
+        #                                   is_selfplay=0)
+        # policy_net = PolicyValueNet(self.board.width, self.board.height,
+        #                             model_file="Gomoku_MCTS/scripts/checkpoint/epochs=1000_size=9/best_policy.model")
+        # # gumbelmcts, use duelingNet
+        # current_mcts_player = MCST_Gumbel_AlphaZero(policy_net.policy_value_fn,
+        #                                             c_puct=5,
+        #                                             n_playout=self.pure_mcts_playout_num,
+        #                                             is_selfplay=0)
         # pure_mcts_player = MCTS_Pure(c_puct=5,
         #                              n_playout=self.pure_mcts_playout_num)
 
@@ -345,8 +362,8 @@ class Game(object):
 
 
 if __name__ == '__main__':
-    board_width = 8
-    board_height = 8
+    board_width = 9
+    board_height = 9
     n_in_row = 5
     board = Board(width=board_width,
                   height=board_height,

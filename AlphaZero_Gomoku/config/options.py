@@ -39,7 +39,7 @@ parser.add_argument("--play_batch_size", type=int, default=2, help="The time of 
 parser.add_argument("--epochs", type=int, default=10, help="num of train_steps for each update")  # 5
 parser.add_argument("--kl_targ", type=float, default=0.02,
                     help="the target kl distance between the old decision function and the new decision function ")
-parser.add_argument("--check_freq", type=int, default=50,
+parser.add_argument("--check_freq", type=int, default=25,
                     help='the frequence of the checking the win ratio when training')
 parser.add_argument("--game_batch_num", type=int, default=3000, help="the total training times")  # 1500
 
