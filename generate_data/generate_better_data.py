@@ -19,9 +19,8 @@ import os
 
 thread_num = 2
 
-episode = 10000
-cnt = 0
-
+episode = 9000
+cnt = 4119
 
 pis_root = r"D:\Program_File\piskvork\piskvork_win_lose"
 

@@ -3,7 +3,7 @@
 
 
 set train_options=--expri test_teaching_learning_collect ^
---split test ^
+--split train ^
 --Player 0 ^
 --batch_size 512 ^
 --play_batch_size 1 ^
@@ -12,7 +12,7 @@ set train_options=--expri test_teaching_learning_collect ^
 --use_gpu 0 ^
 --mood 0  ^
 --data_collect 2 ^
---check_freq 500 ^
+--check_freq 10 ^
 --preload_model checkpoint\test_teaching_learning_collect_epochs=1000_size=9\best_policy.model ^
 
 
