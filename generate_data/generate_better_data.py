@@ -19,8 +19,8 @@ import os
 
 thread_num = 2
 
-episode = 200
-cnt = 250
+episode = 10000
+cnt = 0
 
 
 pis_root = r"D:\Program_File\piskvork\piskvork_win_lose"
@@ -51,7 +51,7 @@ for i in range(episode):
     thread_list = []
 
     # 单线程
-    out_file = "data\\out_better"+ str(cnt) +".txt"
+    out_file = "10_thousand_data\\out_better"+ str(cnt) +".txt"
     
     
     open_idx = str(random.randint(1,60))
