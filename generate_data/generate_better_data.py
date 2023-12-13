@@ -42,8 +42,8 @@ for i in range(episode):
 
     # 随机获取ai
 
-    ai1 = os.path.join(ai_root, random.sample(ai_list,k=1)[0])
-    ai2 = os.path.join(ai_root, random.sample(ai_list,k=1)[0])
+    ai1 = os.path.join( random.sample(ai_list,k=1)[0])
+    ai2 = os.path.join( random.sample(ai_list,k=1)[0])
     print(ai1 + "  vs   " + ai2) 
 
     cnt += 1
@@ -55,7 +55,8 @@ for i in range(episode):
     
     
     open_idx = str(random.randint(1,60))
-    parameters = [pis_root,ai1,ai2, out_file,open_idx]
+    
+    parameters = [pis_root,ai1,ai2, out_file,open_idx,ai_root]
     command = "run_gomocu_manager.bat " + " ".join(parameters) 
 
 
