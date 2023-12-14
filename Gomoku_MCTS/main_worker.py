@@ -27,7 +27,7 @@ from torch.backends import cudnn
 import torch
 
 from tqdm import *
-from torch.utils.tensorboard import SummaryWriter
+# from torch.utils.tensorboard import SummaryWriter
 
 from multiprocessing import Pool
 
@@ -313,7 +313,7 @@ class MainWorker():
                 break
 
             epoch_bar.set_description(f"training epoch {i}")
-            epoch_bar.set_postfix(new_v=new_v, kl=kl)
+            epoch_bar.set_postfix(new_v=new_v[0], kl=kl)
 
         # adaptively adjust the learning rate
         if kl > self.kl_targ * 2 and self.lr_multiplier > 0.1:
