@@ -149,7 +149,7 @@ class PolicyValueNet():
             act_probs = np.exp(log_act_probs.data.numpy())
             return act_probs, value.data.numpy()
 
-    def policy_value_fn(self, board, bias=False):
+    def policy_value_fn(self, board, bias=True):
         """
         input: board
         output: a list of (action, probability) tuples for each available

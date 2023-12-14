@@ -2,6 +2,9 @@ from zobrist import ZobristCache as Zobrist
 from cache import Cache
 from eval import Evaluate, FIVE
 from scipy import signal
+import pickle
+import os
+save_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'train_data/data', 'train_data.pkl')
 
 if 'numpy' not in globals():
     import numpy as np
@@ -23,6 +26,10 @@ class Board:
         self.evaluator = Evaluate(self.size)
         self.available = [(i, j) for i in range(self.size) for j in range(self.size)]
         self.patterns = [np.ones((1, 5)), np.ones((5, 1)), np.eye(5), np.fliplr(np.eye(5))]
+        self.train_data = {1:[], -1: []}
+        if os.path.exists(save_path):
+            with open(save_path, 'rb') as f:
+                self.train_data = pickle.load(f)
 
     def isGameOver(self):
         # Checked
@@ -31,6 +38,9 @@ class Board:
             return self.gameoverCache.get(hash)
         if self.getWinner() != 0:
             self.gameoverCache.put(hash, True)
+            # save train data
+            # with open(save_path, 'wb') as f:
+            #     pickle.dump(self.train_data, f)
             return True  # Someone has won
         # Game is over when there is no empty space on the board or someone has won
         if len(self.history) == self.size ** 2:
@@ -43,12 +53,14 @@ class Board:
     def getWinner(self):
         # Checked
         hash = self.hash()
+        flag = True
         if self.winnerCache.get(hash):
             return self.winnerCache.get(hash)
         directions = [[1, 0], [0, 1], [1, 1], [1, -1]]  # Horizontal, Vertical, Diagonal
         for i in range(self.size):
             for j in range(self.size):
                 if self.board[i][j] == 0:
+                    flag = False
                     continue
                 for direction in directions:
                     count = 0
@@ -61,6 +73,9 @@ class Board:
                     if count >= 5:
                         self.winnerCache.put(hash, self.board[i][j])
                         return self.board[i][j]
+        if flag:
+            print("tie!!!")
+            return 0
         self.winnerCache.put(hash, 0)
         return 0
 
@@ -120,12 +135,22 @@ class Board:
                     and prev["onlyFour"] == onlyFour):
                 return prev["moves"]
 
-        moves = self.evaluator.getMoves(role, depth, onlyThree, onlyFour)
+        moves, train_data = self.evaluator.getMoves(role, depth, onlyThree, onlyFour)
+        self.train_data[self.role].append(train_data)
         # Handle a special case, if the center point is not occupied, add it by default
+
+        # 开局的时候随机走一步，增加开局的多样性
         if not onlyThree and not onlyFour:
             center = self.size // 2
-            if self.board[center][center] == 0:
-                moves.append([center, center])
+            # if self.board[center][center] == 0:
+            #     moves.append((center, center))
+
+            x_step = np.random.randint(-self.size // 2, self.size // 2)
+            y_step = np.random.randint(-self.size // 2, self.size // 2)
+            x = center + x_step
+            y = center + y_step
+            if 0 <= x < self.size and 0 <= y < self.size and self.board[x][y] == 0:
+                moves.append((x, y))
 
         self.valuableMovesCache.put(hash, {
             "role": role,
@@ -148,9 +173,9 @@ class Board:
                     continue
                 value = self.board[i][j]
                 if value == 1:
-                    result += "O "
+                    result += "B " # Black
                 elif value == -1:
-                    result += "X "
+                    result += "W " # White
                 else:
                     result += "- "
             result += "\n"

@@ -197,6 +197,9 @@ class Game(object):
             current_player = self.board.get_current_player()
             player_in_turn = players[current_player]
             move = player_in_turn.get_action(self.board)
+            # if move has two elements, then choose the first
+            if isinstance(move, tuple):
+                move = move[0]
      
             self.board.do_move(move)
             if is_shown:
