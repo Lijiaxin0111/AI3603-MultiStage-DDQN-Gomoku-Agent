@@ -4,11 +4,11 @@ from tensorboardX import SummaryWriter
 from config.options import *
 import torch.distributed as dist
 import time
-
+cur_time = time.strftime('%Y-%m-%d-%H-%M-%S',time.localtime(time.time()))
 """ ==================== Save ======================== """
 
 def make_path():
-    return "{}_epochs={}_size={}".format(opts.expri,opts.game_batch_num, opts.board_width)
+    return "{}_{}_epochs={}_size={}_model={}".format(cur_time, opts.expri,opts.game_batch_num, opts.board_width,opts.model_type)
 
 
 

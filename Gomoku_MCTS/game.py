@@ -15,8 +15,9 @@ from mcts_pure import MCTSPlayer as MCTS_Pure
 from mcts_pure import Human_Player
 from mcts_alphaZero import MCTSPlayer as MCST_AlphaZero
 from collections import defaultdict
-# from policy_value_net_pytorch import PolicyValueNet
-from dueling_net import PolicyValueNet
+from policy_value_net_pytorch_new import PolicyValueNet as alpha_PolicyValueNet
+from dueling_net import PolicyValueNet as duel_PolicyValueNet
+from mcts_Gumbel_Alphazero import Gumbel_MCTSPlayer
 
 class Board(object):
     """board for the game"""
@@ -197,6 +198,9 @@ class Game(object):
             current_player = self.board.get_current_player()
             player_in_turn = players[current_player]
             move = player_in_turn.get_action(self.board)
+            # if move has two elements, then choose the first
+            if isinstance(move, tuple):
+                move = move[0]
      
             self.board.do_move(move)
             if is_shown:
@@ -446,13 +450,33 @@ class Game(object):
         """
         current_mcts_player = MCTS_Pure(c_puct=5,
                                         n_playout=self.pure_mcts_playout_num)
+        option = "duel"
 
-        pi_eval = PolicyValueNet(self.board.width, self.board.height,
-                                 model_file=r'Gomoku_MCTS\checkpoint\test_teaching_learning_collect_epochs=1000_size=9\best_policy.model')
-        current_mcts_player = MCST_AlphaZero(pi_eval.policy_value_fn,
+        if option == "duel":
+            pi_eval = duel_PolicyValueNet(self.board.width, self.board.height,
+                                 model_file=r'/Users/husky/AI_3603_BIGHOME/Gomoku_MCTS/checkpoint/2023-12-14-11-43-01_test_teaching_learning_collect_epochs=1000_size=9_model=duel/best_policy.model')
+        elif option == "biased":
+            pi_eval = alpha_PolicyValueNet(self.board.width, self.board.height,
+                                 model_file=r'/Users/husky/AI_3603_BIGHOME/Gomoku_MCTS/checkpoint/2023-12-14-11-40-49_test_teaching_learning_collect_epochs=1000_size=9_model=biased/best_policy.model')
+        elif option == "normal":
+            pi_eval = alpha_PolicyValueNet(self.board.width, self.board.height,
+                                 model_file=r'/Users/husky/AI_3603_BIGHOME/Gomoku_MCTS/checkpoint/2023-12-14-11-41-03_test_teaching_learning_collect_epochs=1000_size=9_model=normal/best_policy.model')
+        elif option == "gumbel":
+            pi_eval = alpha_PolicyValueNet(self.board.width, self.board.height,
+                                 model_file=r'/Users/husky/AI_3603_BIGHOME/Gomoku_MCTS/checkpoint/2023-12-14-13-01-12_test_teaching_learning_collect_epochs=1000_size=9_model=gumbel/best_policy.model')
+        else:
+            raise Exception("wrong option")
+        if option != "gumbel":
+            current_mcts_player = MCST_AlphaZero(pi_eval.policy_value_fn,
                                              c_puct=5,
                                              n_playout=self.pure_mcts_playout_num,
                                              is_selfplay=0)
+        else:
+            current_mcts_player = Gumbel_MCTSPlayer(pi_eval.policy_value_fn,
+                                             c_puct=5,
+                                             n_playout=self.pure_mcts_playout_num,
+                                             m_action=8)
+
         # pure_mcts_player = MCTS_Pure(c_puct=5,
         #                              n_playout=self.pure_mcts_playout_num)
 

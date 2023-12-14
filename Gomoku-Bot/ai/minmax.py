@@ -34,6 +34,7 @@ def factory(onlyThree=False, onlyFour=False):
         move = None
         bestPath = path  # Copy the current path
         bestDepth = 0
+        # points = board.getValuableMoves(role, cDepth, onlyThree or cDepth > onlyThreeThreshold, onlyFour)
         points = board.getValuableMoves(role, cDepth, onlyThree or cDepth > onlyThreeThreshold, onlyFour)
         if cDepth == 0:
             print('points:', points)

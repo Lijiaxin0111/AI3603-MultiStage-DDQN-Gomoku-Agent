@@ -78,12 +78,13 @@ class PolicyValueNet():
     """policy-value network """
 
     def __init__(self, board_width, board_height,
-                 model_file=None, use_gpu=False):
+                 model_file=None, use_gpu=False, bias = False):
         self.device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
         self.use_gpu = use_gpu
         self.l2_const = 1e-4  # coef of l2 penalty
         self.board_width = board_width
         self.board_height = board_height
+        self.bias = bias
 
         if model_file:
             net_params = torch.load(model_file, map_location='cpu' if not use_gpu else None)
@@ -150,7 +151,7 @@ class PolicyValueNet():
             act_probs = np.exp(log_act_probs.data.numpy())
             return act_probs, value.data.numpy()
 
-    def policy_value_fn(self, board, bias=False):
+    def policy_value_fn(self, board):
         """
         input: board
         output: a list of (action, probability) tuples for each available
@@ -159,7 +160,7 @@ class PolicyValueNet():
         legal_positions = board.availables
         current_state = np.ascontiguousarray(board.current_state().reshape(
             -1, 4, self.board_width, self.board_height))
-        if bias:
+        if self.bias:
             current_state[0][1] = self.apply_normal_bias(current_state[0][1])
 
         if self.use_gpu:

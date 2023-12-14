@@ -190,7 +190,7 @@ class TrainPipeline():
         win_cnt = defaultdict(int)
         for i in tqdm(range(n_games), desc="policy_evaluate", ncols=100):
             winner = self.game.start_play(
-                pure_mcts_player, current_mcts_player,
+                current_mcts_player,pure_mcts_player,
                 start_player=i % 2,
                 is_shown=0)
             win_cnt[winner] += 1
@@ -248,6 +248,6 @@ class TrainPipeline():
 if __name__ == '__main__':
     writer = visualizer()
     training_pipeline = TrainPipeline()
-    # training_pipeline = TrainPipeline(init_model=opts.preload_model)
+    training_pipeline = TrainPipeline(init_model=opts.preload_model)
     training_pipeline.run()
     training_pipeline.policy_evaluate()
