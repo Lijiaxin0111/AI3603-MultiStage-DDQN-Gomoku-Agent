@@ -423,7 +423,7 @@ class Evaluate:
         score = blackScore - whiteScore if role == 1 else whiteScore - blackScore
         return score
 
-    def getMoves(self, role, depth, onThree=False, onlyFour=False, use_net = True):
+    def getMoves(self, role, depth, onThree=False, onlyFour=False, use_net = False):
         # Checked
         train_data = 0
         if use_net and role == 1:

@@ -426,7 +426,7 @@ class MainWorker():
                 elif opts.data_collect == 2:
                     # get absolute path
                     dirname = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-                    output_dir = os.path.join(dirname, "generate_data","data")
+                    output_dir = os.path.join(dirname, "generate_data","10_thousand_data")
                     files = os.listdir(output_dir)
                     random_files = random.sample(files, self.play_batch_size)
                     random_files = [os.path.join(output_dir,file) for file in random_files]

@@ -181,7 +181,7 @@ class MCTS(object):
         
         act_probs =  list(act_probs)
 
-        leaf_value = leaf_value.detach().numpy()[0][0]
+        # leaf_value = leaf_value.detach().numpy()[0][0]
         
         # print(list(act_probs))
         porbs = [prob  for act,prob in (act_probs)]

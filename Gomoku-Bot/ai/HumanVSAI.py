@@ -9,7 +9,7 @@ from eval import FIVE, FOUR, performance
 
 class Game():
     def __init__(self, firstRole=1):
-        self.board = Board(15, firstRole)
+        self.board = Board(8, firstRole)
         self.steps = []
         self.step = 0
         self.enableVCT = True  # 是否开启算杀, 算杀会在某些leaf节点加深搜索, 但是不一定会增加搜索时间

@@ -19,7 +19,7 @@ export train_options="--expri test_teaching_learning_collect \
 --use_gpu 0 \
 --mood 0 \
 --data_collect 2 \
---check_freq 500 \
+--check_freq 200 \
 "
 
 run_cmd="python -u main_worker.py $train_options"
