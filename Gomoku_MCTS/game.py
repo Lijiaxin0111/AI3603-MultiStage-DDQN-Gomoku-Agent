@@ -449,20 +449,20 @@ class Game(object):
         """
         current_mcts_player = MCTS_Pure(c_puct=5,
                                         n_playout=self.pure_mcts_playout_num)
-        option = "duel"
+        option = "normal"
 
         if option == "duel":
             pi_eval = duel_PolicyValueNet(self.board.width, self.board.height,
-                                 model_file=r'/Users/husky/AI_3603_BIGHOME/Gomoku_MCTS/checkpoint/2023-12-14-11-43-01_test_teaching_learning_collect_epochs=1000_size=9_model=duel/best_policy.model')
+                                 model_file=r'/Users/husky/AI_3603_BIGHOME/Gomoku_MCTS/checkpoint/2023-12-14-10-22-12_test_teaching_learning_collect_epochs=1000_size=9_model=duel/best_policy.model')
         elif option == "biased":
             pi_eval = alpha_PolicyValueNet(self.board.width, self.board.height,
                                  model_file=r'/Users/husky/AI_3603_BIGHOME/Gomoku_MCTS/checkpoint/2023-12-14-11-40-49_test_teaching_learning_collect_epochs=1000_size=9_model=biased/best_policy.model')
         elif option == "normal":
             pi_eval = alpha_PolicyValueNet(self.board.width, self.board.height,
-                                 model_file=r'/Users/husky/AI_3603_BIGHOME/Gomoku_MCTS/checkpoint/2023-12-14-11-41-03_test_teaching_learning_collect_epochs=1000_size=9_model=normal/best_policy.model')
+                                 model_file=r'Gomoku_MCTS/checkpoint/2023-12-14-18-17-07_test_teaching_learning_collect_epochs=1000_size=9_model=normal/best_policy.model')
         elif option == "gumbel":
             pi_eval = alpha_PolicyValueNet(self.board.width, self.board.height,
-                                 model_file=r'/Users/husky/AI_3603_BIGHOME/Gomoku_MCTS/checkpoint/2023-12-14-13-01-12_test_teaching_learning_collect_epochs=1000_size=9_model=gumbel/best_policy.model')
+                                 model_file=r'/Users/husky/AI_3603_BIGHOME/Gomoku_MCTS/checkpoint/2023-12-14-21-19-40_selfplay_epochs=1000_size=9_model=gumbel/current_policy.model')
         else:
             raise Exception("wrong option")
         if option != "gumbel":
