@@ -214,6 +214,7 @@ class MainWorker():
     def parser_output(self, outflies, n_games):
 
         ignore_opening_random = 3
+        # print(outflies)
         
 
         for i in range(n_games):
@@ -427,23 +428,44 @@ class MainWorker():
                     # print("[Done] collect high")
                 elif opts.data_collect == 2:
                     # get absolute path
-                    dirname = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-                    output_dir = os.path.join(dirname, "generate_data","10_thousand_data")
 
-                    files = os.listdir(output_dir)[1:] # 这里需要把json 跳掉
-                    # random_files = random.sample(files, self.play_batch_size)
-                    # random_files = [os.path.join(output_dir,file) for file in random_files]
+                    if opts.data_augment != 0:
+                        dirname = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                        output_dir = os.path.join(dirname, "generate_data","10_thousand_data")
 
-                    with open(os.path.join( output_dir ,"data_split.json")) as json_file :
-                        split = json.load(json_file)
-                    
-                    # files = os.listdir(output_dir)
-                    # print(split)
-                    files = split['1']  # 这里按照需要设置 胜者 1, 2 ; 平局 -1 , 可以平均随机一下
-                    
-                    files = random.sample([os.path.join(output_dir,file) for file in files] , self.play_batch_size)  # 建议把这个play_batch_size 调大一些
-                    
-                    self.parser_output(files, self.play_batch_size) # 建议把这个play_batch_size 调大一些
+                        
+
+                        files = os.listdir(output_dir)[1:] # 这里需要把json 跳掉
+                        # random_files = random.sample(files, self.play_batch_size)
+                        # random_files = [os.path.join(output_dir,file) for file in random_files]
+
+                        with open(os.path.join( output_dir ,"data_split.json")) as json_file :
+                            split = json.load(json_file)
+                        
+                        # files = os.listdir(output_dir)
+                        # print(split)
+                        files = []
+                        
+                        for j in ["1",'2','-1']:
+                                files = files +  random.sample([os.path.join(output_dir,file) for file in split[j]] , min(  len(split[j]) ,int(opts.data_augment)) )
+                                # print("get ", min(  len(split[j]) ,int(opts.data_augment)), "episode")
+
+                        # files = split['1']  # 这里按照需要设置 胜者 1, 2 ; 平局 -1 , 可以平均随机一下
+            
+                        self.parser_output(files, self.play_batch_size) # 建议把这个play_batch_size 调大一些
+                
+                    else:
+                        dirname = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                        output_dir = os.path.join(dirname, "generate_data","10_thousand_data")
+
+                        files = os.listdir(output_dir)[1:] # 这里需要把json 跳掉
+                   
+                        random_files = random.sample(files, self.play_batch_size)
+                        random_files = [os.path.join(output_dir,file) for file in random_files]
+                        # files = random.sample([os.path.join(output_dir,file) for file in files] , self.play_batch_size)  # 建议把这个play_batch_size 调大一些
+                        
+                        self.parser_output(random_files, self.play_batch_size) # 建议把这个play_batch_size 调大一些
+
 
                 else:
                     self.collect_selfplay_data(self.play_batch_size)
@@ -464,7 +486,7 @@ class MainWorker():
 
                 # check the performance of the current model,
                 # and save the model params
-                print(self.board.availables)
+                # print(self.board.availables)
                 if (i + 1) % self.check_freq == 0:
                     win_ratio = self.policy_evaluate()
 

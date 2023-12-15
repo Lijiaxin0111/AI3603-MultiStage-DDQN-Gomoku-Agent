@@ -14,7 +14,7 @@ set train_options=--expri test_teaching_learning_collect ^
 --data_collect 2 ^
 --check_freq 10 ^
 --preload_model checkpoint\test_teaching_learning_collect_epochs=1000_size=9\best_policy.model ^
-
+--data_augment 3 ^
 
 --game_batch_num 2000 ^
 
