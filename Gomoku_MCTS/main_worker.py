@@ -25,6 +25,7 @@ from config.utils import *
 from torch.backends import cudnn
 
 import torch
+import json
 
 from tqdm import *
 # from torch.utils.tensorboard import SummaryWriter
@@ -216,6 +217,7 @@ class MainWorker():
     def parser_output(self, outflies, n_games):
 
         ignore_opening_random = 3
+        
 
         for i in range(n_games):
             winner, play_data = self.game.start_parser(outflies[i])
@@ -430,11 +432,21 @@ class MainWorker():
                     # get absolute path
                     dirname = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
                     output_dir = os.path.join(dirname, "generate_data","10_thousand_data")
-                    files = os.listdir(output_dir)
-                    random_files = random.sample(files, self.play_batch_size)
-                    random_files = [os.path.join(output_dir,file) for file in random_files]
 
-                    self.parser_output(random_files, self.play_batch_size)
+                    files = os.listdir(output_dir)[1:] # 这里需要把json 跳掉
+                    # random_files = random.sample(files, self.play_batch_size)
+                    # random_files = [os.path.join(output_dir,file) for file in random_files]
+
+                    with open(os.path.join( output_dir ,"data_split.json")) as json_file :
+                        split = json.load(json_file)
+                    
+                    # files = os.listdir(output_dir)
+                    # print(split)
+                    files = split['1']  # 这里按照需要设置 胜者 1, 2 ; 平局 -1 , 可以平均随机一下
+                    
+                    files = random.sample([os.path.join(output_dir,file) for file in files] , self.play_batch_size)  # 建议把这个play_batch_size 调大一些
+                    
+                    self.parser_output(files, self.play_batch_size) # 建议把这个play_batch_size 调大一些
 
                 else:
                     self.collect_selfplay_data(self.play_batch_size)
