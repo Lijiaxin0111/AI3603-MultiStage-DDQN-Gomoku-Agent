@@ -96,11 +96,11 @@ class MainWorker():
         if opts.preload_model:
             if opts.model_type == "duel":
                 print("preload duel model")
-            # start training from an initial policy-value net
+                # start training from an initial policy-value net
                 self.policy_value_net = dueling_PolicyValueNet(self.board_width,
-                                                       self.board_height,
-                                                       model_file=opts.preload_model,
-                                                       use_gpu=(self.device == "cuda"))
+                                                               self.board_height,
+                                                               model_file=opts.preload_model,
+                                                               use_gpu=(self.device == "cuda"))
             elif opts.model_type == "biased":
                 print("preload biased model")
                 self.policy_value_net = new_PolicyValueNet(self.board_width,
@@ -123,8 +123,8 @@ class MainWorker():
             # start training from a new policy-value net
             if opts.model_type == "duel":
                 self.policy_value_net = dueling_PolicyValueNet(self.board_width,
-                                                   self.board_height,
-                                                   use_gpu=(self.device == "cuda"))
+                                                               self.board_height,
+                                                               use_gpu=(self.device == "cuda"))
             elif opts.model_type == "biased":
                 self.policy_value_net = new_PolicyValueNet(self.board_width,
                                                            self.board_height,
@@ -137,7 +137,6 @@ class MainWorker():
                                                            bias=False)
             else:
                 raise ValueError("illegal model type")
-
 
         if opts.model_type != "gumbel":
             self.mcts_player = MCTSPlayer(self.policy_value_net.policy_value_fn,
@@ -217,7 +216,6 @@ class MainWorker():
     def parser_output(self, outflies, n_games):
 
         ignore_opening_random = 3
-        
 
         for i in range(n_games):
             winner, play_data = self.game.start_parser(outflies[i])
@@ -397,7 +395,7 @@ class MainWorker():
         for i in range(n_games):
             winner = self.game.start_play(current_mcts_player, pure_mcts_player,
                                           start_player=i % 2,
-                                          is_shown=opts.shown)
+                                          is_shown=True)
             win_cnt[winner] += 1
             print(f" {i}_th winner:", winner)
         win_ratio = 1.0 * (win_cnt[1] + 0.5 * win_cnt[-1]) / n_games
@@ -431,22 +429,23 @@ class MainWorker():
                 elif opts.data_collect == 2:
                     # get absolute path
                     dirname = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-                    output_dir = os.path.join(dirname, "generate_data","10_thousand_data")
+                    output_dir = os.path.join(dirname, "generate_data", "10_thousand_data")
 
-                    files = os.listdir(output_dir)[1:] # 这里需要把json 跳掉
+                    files = os.listdir(output_dir)[1:]  # 这里需要把json 跳掉
                     # random_files = random.sample(files, self.play_batch_size)
                     # random_files = [os.path.join(output_dir,file) for file in random_files]
 
-                    with open(os.path.join( output_dir ,"data_split.json")) as json_file :
+                    with open(os.path.join(output_dir, "data_split.json")) as json_file:
                         split = json.load(json_file)
-                    
+
                     # files = os.listdir(output_dir)
                     # print(split)
                     files = split['1']  # 这里按照需要设置 胜者 1, 2 ; 平局 -1 , 可以平均随机一下
-                    
-                    files = random.sample([os.path.join(output_dir,file) for file in files] , self.play_batch_size)  # 建议把这个play_batch_size 调大一些
-                    
-                    self.parser_output(files, self.play_batch_size) # 建议把这个play_batch_size 调大一些
+
+                    files = random.sample([os.path.join(output_dir, file) for file in files],
+                                          self.play_batch_size)  # 建议把这个play_batch_size 调大一些
+
+                    self.parser_output(files, self.play_batch_size)  # 建议把这个play_batch_size 调大一些
 
                 else:
                     self.collect_selfplay_data(self.play_batch_size)
@@ -474,7 +473,6 @@ class MainWorker():
                     batch_bar.set_description(f"game batch num {i + 1}")
                     writer.add_scalar("evaluate/win_ratio ", win_ratio, i)
                     batch_bar.set_postfix(loss=loss, entropy=entropy, win_ratio=win_ratio)
-
 
                     save_model(self.policy_value_net.policy_value_net, "current_policy.model")
 

@@ -3,7 +3,6 @@
 Monte Carlo Tree Search in AlphaGo Zero style, which uses a policy-value
 network to guide the tree search and evaluate the leaf nodes
 
-@author: Junxiao Song
 """
 
 import numpy as np
@@ -11,6 +10,7 @@ import copy
 import time
 from concurrent.futures import ThreadPoolExecutor
 import threading
+from cal_kill import find_live_four_completion
 
 from config.options import *
 import sys
@@ -241,7 +241,15 @@ class MCTSPlayer(object):
     def reset_player(self):
         self.mcts.update_with_move(-1)
 
-    def get_action(self, board, temp=1e-3, return_prob=0, return_time=False):
+    def get_action(self, board, temp=1e-3, return_prob=0, return_time=False, use_kill = True):
+
+        if use_kill:
+            move = find_live_four_completion(board, self.player)
+            if move:
+                print("killing!")
+                print(move)
+                return move
+
         sensible_moves = board.availables
         # the pi vector returned by MCTS as in the alphaGo Zero paper
         move_probs = np.zeros(board.width * board.height)
