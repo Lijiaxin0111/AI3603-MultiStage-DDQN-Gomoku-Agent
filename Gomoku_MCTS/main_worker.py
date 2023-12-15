@@ -94,18 +94,21 @@ class MainWorker():
 
         if opts.preload_model:
             if opts.model_type == "duel":
+                print("preload duel model")
             # start training from an initial policy-value net
                 self.policy_value_net = dueling_PolicyValueNet(self.board_width,
                                                        self.board_height,
                                                        model_file=opts.preload_model,
                                                        use_gpu=(self.device == "cuda"))
             elif opts.model_type == "biased":
+                print("preload biased model")
                 self.policy_value_net = new_PolicyValueNet(self.board_width,
                                                            self.board_height,
                                                            model_file=opts.preload_model,
                                                            use_gpu=(self.device == "cuda"),
                                                            bias=True)
             elif opts.model_type == "normal" or "gumbel":
+                print("preload normal/gumbel model")
                 self.policy_value_net = new_PolicyValueNet(self.board_width,
                                                            self.board_height,
                                                            model_file=opts.preload_model,
@@ -398,11 +401,11 @@ class MainWorker():
         win_ratio = 1.0 * (win_cnt[1] + 0.5 * win_cnt[-1]) / n_games
 
         if (opts.split == "test"):
-            if (opts.mood == 0):
+            if opts.mood == 0:
                 print("[TEST] Alphazero  Vs MCTS_Pure")
-            elif (opts.mood == 1):
+            elif opts.mood == 1:
                 print("[TEST] Gumbel_Alphazero  Vs MCTS_Pure")
-            elif (opts.mood == 2):
+            elif opts.mood == 2:
                 print("[TEST] Alphazero Vs  Gumbel_Alphazero ")
 
         print("num_playouts:{}, win: {}, lose: {}, tie:{}".format(
