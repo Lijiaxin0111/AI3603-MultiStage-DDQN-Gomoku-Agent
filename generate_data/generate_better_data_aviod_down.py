@@ -74,6 +74,7 @@ for i in range(episode):
 
     ai1 = os.path.join( random.sample(ai_list,k=1)[0])
     ai2 = os.path.join( random.sample(ai_list,k=1)[0])
+    ai1 = "pbrain-rapfi21.exe"
     print(ai1 + "  vs   " + ai2) 
 
 
@@ -82,7 +83,7 @@ for i in range(episode):
     thread_list = []
 
     # 单线程
-    out_file = "test_100_thoudsand\\out_better"+ str(cnt) +".txt"
+    out_file = "10_thousand_data_win_lose\\out_better"+ str(cnt) +".txt"
     
     
     open_idx = str(random.randint(1,60))
