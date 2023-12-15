@@ -20,12 +20,12 @@ from torch.autograd import Variable
 import torch.nn.functional as F
 
 from config.options import *
+import json 
 import sys
 from config.utils import *
 from torch.backends import cudnn
 
 import torch
-import json
 
 from tqdm import *
 # from torch.utils.tensorboard import SummaryWriter
@@ -95,21 +95,18 @@ class MainWorker():
 
         if opts.preload_model:
             if opts.model_type == "duel":
-                print("preload duel model")
             # start training from an initial policy-value net
                 self.policy_value_net = dueling_PolicyValueNet(self.board_width,
                                                        self.board_height,
                                                        model_file=opts.preload_model,
                                                        use_gpu=(self.device == "cuda"))
             elif opts.model_type == "biased":
-                print("preload biased model")
                 self.policy_value_net = new_PolicyValueNet(self.board_width,
                                                            self.board_height,
                                                            model_file=opts.preload_model,
                                                            use_gpu=(self.device == "cuda"),
                                                            bias=True)
             elif opts.model_type == "normal" or "gumbel":
-                print("preload normal/gumbel model")
                 self.policy_value_net = new_PolicyValueNet(self.board_width,
                                                            self.board_height,
                                                            model_file=opts.preload_model,
@@ -213,21 +210,62 @@ class MainWorker():
         play_data = self.get_equi_data(play_data)
 
         return play_data
-
-    def parser_output(self, outflies, n_games):
+    
+    def test_parser_output(self, outflies):
 
         ignore_opening_random = 3
+        outflies = outflies[1:]
+        tq = tqdm( range(len(outflies)))
+        # better = {1: [], 2:[],-1:[]}
         # print(outflies)
+
+        for i in tq:
+            winner, play_data = self.game.start_parser(outflies[i],is_shown=1)
+            # print("[DATA] get_data from ", outflies[i])
+            
+            # if winner != -1:
+            # better[winner].append(outflies[i].split('\\')[-1])
+            # print(winner,":", outflies[i].split('\\')[-1] )  
         
-
-        for i in range(n_games):
-            winner, play_data = self.game.start_parser(outflies[i])
-            print("[DATA] get_data from ", outflies[i])
-
             play_data = list(play_data)[ignore_opening_random:]
+
 
             play_data = self.get_equi_data(play_data)
             self.data_buffer.extend(play_data)
+            # print(better)
+            
+            print("DONE")
+
+   
+        # print(better)
+
+    def filter_parser_output(self, outflies):
+
+        ignore_opening_random = 3
+        outflies = outflies[1:]
+        tq = tqdm( range(len(outflies)))
+        better = {1: [], 2:[],-1:[]}
+        # print(outflies)
+
+        for i in tq:
+            winner, play_data = self.game.start_parser(outflies[i])
+            # print("[DATA] get_data from ", outflies[i])
+            
+            # if winner != -1:
+            better[winner].append(outflies[i].split('\\')[-1])
+            # print(winner,":", outflies[i].split('\\')[-1] )  
+        
+            play_data = list(play_data)[ignore_opening_random:]
+
+
+            play_data = self.get_equi_data(play_data)
+            self.data_buffer.extend(play_data)
+            # print(better)
+            
+
+        with open(r"C:\Users\li_jiaxin\Desktop\AI3603\BGWH\code\AI_3603_BIGHOME\generate_data\10_thousand_data\data_split.json", "w") as json_file :
+            json.dump(better,json_file)
+        print(better)
 
         # return play_data  
 
@@ -404,11 +442,11 @@ class MainWorker():
         win_ratio = 1.0 * (win_cnt[1] + 0.5 * win_cnt[-1]) / n_games
 
         if (opts.split == "test"):
-            if opts.mood == 0:
+            if (opts.mood == 0):
                 print("[TEST] Alphazero  Vs MCTS_Pure")
-            elif opts.mood == 1:
+            elif (opts.mood == 1):
                 print("[TEST] Gumbel_Alphazero  Vs MCTS_Pure")
-            elif opts.mood == 2:
+            elif (opts.mood == 2):
                 print("[TEST] Alphazero Vs  Gumbel_Alphazero ")
 
         print("num_playouts:{}, win: {}, lose: {}, tie:{}".format(
@@ -431,85 +469,61 @@ class MainWorker():
                     # print("[Done] collect high")
                 elif opts.data_collect == 2:
                     # get absolute path
+                    dirname = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                    output_dir = os.path.join(dirname,"10_thousand_data")
 
-                    if opts.data_augment != 0:
-                        dirname = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-                        output_dir = os.path.join(dirname, "generate_data","10_thousand_data")
+                    with open(r"C:\Users\li_jiaxin\Desktop\AI3603\BGWH\code\AI_3603_BIGHOME\generate_data\10_thousand_data\data_split.json") as json_file :
+                        split = json.load(json_file)
+                    
+                    # files = os.listdir(output_dir)
+                    print(split)
+                    files = split['1'] 
+                    
+                    files = [os.path.join(output_dir,file) for file in files]
 
-                        
-
-                        files = os.listdir(output_dir)[1:] # 这里需要把json 跳掉
-                        # random_files = random.sample(files, self.play_batch_size)
-                        # random_files = [os.path.join(output_dir,file) for file in random_files]
-
-                        with open(os.path.join( output_dir ,"data_split.json")) as json_file :
-                            split = json.load(json_file)
-                        
-                        # files = os.listdir(output_dir)
-                        # print(split)
-                        files = []
-                        
-                        for j in ["1",'2','-1']:
-                                files = files +  random.sample([os.path.join(output_dir,file) for file in split[j]] , min(  len(split[j]) ,int(opts.data_augment)) )
-                                # print("get ", min(  len(split[j]) ,int(opts.data_augment)), "episode")
-
-                        # files = split['1']  # 这里按照需要设置 胜者 1, 2 ; 平局 -1 , 可以平均随机一下
-            
-                        self.parser_output(files, self.play_batch_size) # 建议把这个play_batch_size 调大一些
-                
-                    else:
-                        dirname = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-                        output_dir = os.path.join(dirname, "generate_data","10_thousand_data")
-
-                        files = os.listdir(output_dir)[1:] # 这里需要把json 跳掉
-                   
-                        random_files = random.sample(files, self.play_batch_size)
-                        random_files = [os.path.join(output_dir,file) for file in random_files]
-                        # files = random.sample([os.path.join(output_dir,file) for file in files] , self.play_batch_size)  # 建议把这个play_batch_size 调大一些
-                        
-                        self.parser_output(random_files, self.play_batch_size) # 建议把这个play_batch_size 调大一些
-
+                    # self.filter_parser_output(files)
+                    self.test_parser_output(files)
 
                 else:
                     self.collect_selfplay_data(self.play_batch_size)
 
-                # print("Done")
-                if len(self.data_buffer) > self.batch_size:
-                    kl, loss, entropy, explained_var_old, explained_var_new, value_loss, policy_loss = self.policy_update()
+                # # print("Done")
+                # if len(self.data_buffer) > self.batch_size:
+                #     kl, loss, entropy, explained_var_old, explained_var_new, value_loss, policy_loss = self.policy_update()
 
-                    writer.add_scalar("policy_update/kl", kl, i)
-                    writer.add_scalar("policy_update/loss", loss, i)
-                    writer.add_scalar("policy_update/value_loss", value_loss, i)
-                    writer.add_scalar("policy_update/policy_loss", policy_loss, i)
-                    writer.add_scalar("policy_update/entropy", entropy, i)
-                    writer.add_scalar("policy_update/explained_var_old", explained_var_old, i)
-                    writer.add_scalar("policy_update/explained_var_new ", explained_var_new, i)
+                #     writer.add_scalar("policy_update/kl", kl, i)
+                #     writer.add_scalar("policy_update/loss", loss, i)
+                #     writer.add_scalar("policy_update/value_loss", value_loss, i)
+                #     writer.add_scalar("policy_update/policy_loss", policy_loss, i)
+                #     writer.add_scalar("policy_update/entropy", entropy, i)
+                #     writer.add_scalar("policy_update/explained_var_old", explained_var_old, i)
+                #     writer.add_scalar("policy_update/explained_var_new ", explained_var_new, i)
 
-                batch_bar.set_description(f"game batch num {i}")
+                # batch_bar.set_description(f"game batch num {i}")
 
-                # check the performance of the current model,
-                # and save the model params
+                # # check the performance of the current model,
+                # # and save the model params
                 # print(self.board.availables)
-                if (i + 1) % self.check_freq == 0:
-                    win_ratio = self.policy_evaluate()
+                # if (i + 1) % self.check_freq == 0:
+                #     win_ratio = self.policy_evaluate()
 
-                    batch_bar.set_description(f"game batch num {i + 1}")
-                    writer.add_scalar("evaluate/win_ratio ", win_ratio, i)
-                    batch_bar.set_postfix(loss=loss, entropy=entropy, win_ratio=win_ratio)
+                #     batch_bar.set_description(f"game batch num {i + 1}")
+                #     writer.add_scalar("evaluate/win_ratio ", win_ratio, i)
+                #     batch_bar.set_postfix(loss=loss, entropy=entropy, win_ratio=win_ratio)
 
 
-                    save_model(self.policy_value_net.policy_value_net, "current_policy.model")
+                #     save_model(self.policy_value_net.policy_value_net, "current_policy.model")
 
-                    if win_ratio > self.best_win_ratio:
-                        print("New best policy!!!!!!!!")
-                        print("best win_ratio: ", self.best_win_ratio)
-                        self.best_win_ratio = win_ratio
-                        # update the best_policy
-                        save_model(self.policy_value_net.policy_value_net, "best_policy.model")
-                        if (self.best_win_ratio == 1.0 and
-                                self.pure_mcts_playout_num < 5000):
-                            self.pure_mcts_playout_num += 1000
-                            self.best_win_ratio = 0.0
+                #     if win_ratio > self.best_win_ratio:
+                #         print("New best policy!!!!!!!!")
+                #         print("best win_ratio: ", self.best_win_ratio)
+                #         self.best_win_ratio = win_ratio
+                #         # update the best_policy
+                #         save_model(self.policy_value_net.policy_value_net, "best_policy.model")
+                #         if (self.best_win_ratio == 1.0 and
+                #                 self.pure_mcts_playout_num < 5000):
+                #             self.pure_mcts_playout_num += 1000
+                #             self.best_win_ratio = 0.0
         except KeyboardInterrupt:
             print('\n\rquit')
 
