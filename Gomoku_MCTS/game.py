@@ -322,7 +322,6 @@ class Game(object):
         with open(out_file,"r") as file:
             moves = file.readlines()
         # print("out::", moves)
-   
         cnt = 2
 
         states, mcts_probs, current_players = [], [], []
