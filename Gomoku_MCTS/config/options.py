@@ -69,6 +69,7 @@ parser.add_argument("--mood", type=int,default= 0 ,help="the test mood:=  0: Alp
 parser.add_argument("--temp", type=float,default= 1.0 ,help="the temperature parameter when calculate the decision function getting the next action")
 parser.add_argument("--n_playout",type=int, default=200, help="num of simulations for each move ")
 parser.add_argument("--c_puct",type=int, default=5, help= "the balance parameter between exploration and exploitative ")
+parser.add_argument("--res_num", type=int,default= 5 ,help="the number of residual block in the network")
 
 # GumbelAlphazero agent setting
 parser.add_argument("--action_m",type=int, default=8, help="num of simulations for each move ")

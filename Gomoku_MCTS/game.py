@@ -156,7 +156,7 @@ class Game(object):
 
     def __init__(self, board, **kwargs):
         self.board = board
-        self.pure_mcts_playout_num = 200  # simulation time
+        self.pure_mcts_playout_num = 5000  # simulation time
 
     def graphic(self, board, player1, player2):
         """Draw the board and show game info"""
@@ -182,7 +182,7 @@ class Game(object):
                     print('_'.center(8), end='')
             print('\r\n\r\n')
 
-    def start_play(self, player1, player2, start_player=0, is_shown=1):
+    def start_play(self, player1, player2, start_player=0, is_shown=0):
         """start a game between two players"""
         if start_player not in (0, 1):
             raise Exception('start_player should be either 0 (player1 first) '
@@ -449,7 +449,7 @@ class Game(object):
         """
         current_mcts_player = MCTS_Pure(c_puct=5,
                                         n_playout=self.pure_mcts_playout_num)
-        option = "normal"
+        option = "duel"
 
         if option == "duel":
             pi_eval = duel_PolicyValueNet(self.board.width, self.board.height,
@@ -468,7 +468,7 @@ class Game(object):
         if option != "gumbel":
             current_mcts_player = MCST_AlphaZero(pi_eval.policy_value_fn,
                                              c_puct=5,
-                                             n_playout=self.pure_mcts_playout_num,
+                                             n_playout=200,
                                              is_selfplay=0)
         else:
             current_mcts_player = Gumbel_MCTSPlayer(pi_eval.policy_value_fn,
@@ -476,16 +476,16 @@ class Game(object):
                                              n_playout=self.pure_mcts_playout_num,
                                              m_action=8)
 
-        # pure_mcts_player = MCTS_Pure(c_puct=5,
-        #                              n_playout=self.pure_mcts_playout_num)
+        pure_mcts_player = MCTS_Pure(c_puct=5,
+                                     n_playout=self.pure_mcts_playout_num)
 
-        pure_mcts_player = Human_Player()
+        # pure_mcts_player = Human_Player()
         win_cnt = defaultdict(int)
         for i in range(n_games):
             winner = self.start_play(current_mcts_player,
                                      pure_mcts_player,
                                      start_player=i % 2,
-                                     is_shown=1)
+                                     is_shown=0)
             win_cnt[winner] += 1
         win_ratio = 1.0 * (win_cnt[1] + 0.5 * win_cnt[-1]) / n_games
         print("num_playouts:{}, win: {}, lose: {}, tie:{}".format(

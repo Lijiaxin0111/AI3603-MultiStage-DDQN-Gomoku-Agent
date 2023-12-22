@@ -149,7 +149,7 @@ class Board:
             y_step = np.random.randint(-self.size // 2, self.size // 2)
             x = center + x_step
             y = center + y_step
-            if 0 <= x < self.size and 0 <= y < self.size and self.board[x][y] == 0:
+            if self.size > x >= 0 == self.board[x][y] and 0 <= y < self.size:
                 moves.append((x, y))
 
         self.valuableMovesCache.put(hash, {

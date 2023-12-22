@@ -209,7 +209,7 @@ class Evaluate:
         last_points = [position for position, _ in self.history[-4:]]
 
         for r in [role, -role]:
-            # 这里是直接遍历了这个棋盘上的所有点位，如果棋盘很大，这里会有性能问题；可以用神经网络来预测
+            # 这里是直接遍历了这个棋盘上的所有点位，如果棋盘很大，这里会有性能问题?；尝试用神经网络来优化？
             for i in range(self.size):
                 for j in range(self.size):
                     four_count = 0
@@ -220,7 +220,7 @@ class Evaluate:
                         if self.board[i + 1][j + 1] != 0:
                             continue
 
-                        shape = self.shapeCache[r][direction][i][j]
+                        shape = self.shapeCache[r][direction][i][j] # use a cache to speed up
 
                         if not shape:
                             continue
@@ -579,7 +579,7 @@ class Evaluate:
             model_train_matrix[x][y] = max(THREE, model_train_matrix[x][y])
 
         mid = list(block_fours) + list(threes) + list(block_threes) + list(two_twos) + list(twos)
-        res = set(mid[:5])
+        res = set(mid[:5]) # choose the first 5 points
         for i in range(len(model_train_matrix)):
             for j in range(len(model_train_matrix)):
                 if (i * len(model_train_matrix) + j) not in res:

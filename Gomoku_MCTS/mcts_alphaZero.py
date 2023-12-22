@@ -241,7 +241,7 @@ class MCTSPlayer(object):
     def reset_player(self):
         self.mcts.update_with_move(-1)
 
-    def get_action(self, board, temp=1e-3, return_prob=0, return_time=False, use_kill = True):
+    def get_action(self, board, temp=1e-3, return_prob=0, return_time=False, use_kill = False):
 
         if use_kill:
             move = find_live_four_completion(board, self.player)

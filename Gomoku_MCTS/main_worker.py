@@ -107,14 +107,14 @@ class MainWorker():
                                                            self.board_height,
                                                            model_file=opts.preload_model,
                                                            use_gpu=(self.device == "cuda"),
-                                                           bias=True)
+                                                           bias=True, res_block_num=opts.res_num)
             elif opts.model_type == "normal" or "gumbel":
                 print("preload normal/gumbel model")
                 self.policy_value_net = new_PolicyValueNet(self.board_width,
                                                            self.board_height,
                                                            model_file=opts.preload_model,
                                                            use_gpu=(self.device == "cuda"),
-                                                           bias=False)
+                                                           bias=False,res_block_num=opts.res_num)
             else:
                 raise ValueError("illegal model type")
 
@@ -129,12 +129,12 @@ class MainWorker():
                 self.policy_value_net = new_PolicyValueNet(self.board_width,
                                                            self.board_height,
                                                            use_gpu=(self.device == "cuda"),
-                                                           bias=True)
+                                                           bias=True,res_block_num=opts.res_num)
             elif opts.model_type == "normal" or "gumbel":
                 self.policy_value_net = new_PolicyValueNet(self.board_width,
                                                            self.board_height,
                                                            use_gpu=(self.device == "cuda"),
-                                                           bias=False)
+                                                           bias=False,res_block_num=opts.res_num)
             else:
                 raise ValueError("illegal model type")
 
@@ -216,7 +216,7 @@ class MainWorker():
 
     def parser_output(self, outflies, n_games):
 
-        ignore_opening_random = 3
+        ignore_opening_random = 0
         # print(outflies)
         
 
@@ -434,7 +434,8 @@ class MainWorker():
 
                     if opts.data_augment != 0:
                         dirname = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-                        output_dir = os.path.join(dirname, "generate_data","10_thousand_data")
+                        # output_dir = os.path.join(dirname, "generate_data","10_thousand_data")
+                        output_dir = os.path.join(dirname, "generate_data", "100_thousand_final")
 
                         
 
