@@ -201,7 +201,8 @@ class MCTS(object):
         total_time = time.time() - t
         # print('!!time!!:', time.time() - t)
 
-        print(f" My MCTS sum_time: {total_time}, total_simulation: {self._n_playout}")
+        print(
+            f" My MCTS sum_time: {total_time}, average: {start_time_averge / self._n_playout} total_simulation: {self._n_playout}")
 
         # calc the move probabilities based on visit counts at the root node
         act_visits = [(act, node._n_visits)

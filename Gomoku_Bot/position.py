@@ -1,5 +1,5 @@
 from typing import List
-from config import config
+from .config import config
 # Checked
 
 # Function to convert position to coordinate

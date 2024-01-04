@@ -1,19 +1,19 @@
 from enum import Enum
 import math
-from shape import shapes, get_shape_fast, is_five, is_four, get_all_shapes_of_point
-from position import coordinate2Position, isLine, isAllInLine, hasInLine, position2Coordinate
-from config import config
+from .shape import shapes, get_shape_fast, is_five, is_four, get_all_shapes_of_point
+from .position import coordinate2Position, isLine, isAllInLine, hasInLine, position2Coordinate
+from .config import config
 from datetime import datetime
 import os
 
 dir_path = os.path.dirname(os.path.abspath(__file__))
 import numpy as np
 import torch
-from minimax_Net import BoardEvaluationNet as net
+# from .minimax_Net import BoardEvaluationNet as net
 
-mini_max_net = net(board_size=15)
-mini_max_net.load_state_dict(torch.load(os.path.join(dir_path, 'train_data/model', 'best_loss=609.3356355479785.pth')))
-mini_max_net.eval()
+# mini_max_net = net(board_size=15)
+# mini_max_net.load_state_dict(torch.load(os.path.join(dir_path, 'train_data/model', 'best_loss=609.3356355479785.pth')))
+# mini_max_net.eval()
 
 
 # Enum to represent different shapes
@@ -34,7 +34,7 @@ class Shapes(Enum):
 
 # Constants representing scores for each shape
 FIVE = 10000000
-BLOCK_FIVE = FIVE
+BLOCK_FIVE = FIVE + 1
 FOUR = 100000
 FOUR_FOUR = FOUR  # 双冲四
 FOUR_THREE = FOUR  # 冲四活三
@@ -209,7 +209,7 @@ class Evaluate:
         last_points = [position for position, _ in self.history[-4:]]
 
         for r in [role, -role]:
-            # 这里是直接遍历了这个棋盘上的所有点位，如果棋盘很大，这里会有性能问题?；尝试用神经网络来优化？
+            # 这里是直接遍历了这个棋盘上的所有点位，如果棋盘很大，这里会有性能问题；可以用神经网络来预测
             for i in range(self.size):
                 for j in range(self.size):
                     four_count = 0
@@ -220,7 +220,7 @@ class Evaluate:
                         if self.board[i + 1][j + 1] != 0:
                             continue
 
-                        shape = self.shapeCache[r][direction][i][j] # use a cache to speed up
+                        shape = self.shapeCache[r][direction][i][j]
 
                         if not shape:
                             continue
@@ -427,19 +427,20 @@ class Evaluate:
         # Checked
         train_data = 0
         if use_net and role == 1:
-            value_move_num = 6
-            input = torch.Tensor(np.array(self.board)[1:-1, 1:-1]).unsqueeze(0)
-            scores = mini_max_net(input)
-            flattened_scores = scores.flatten()
-
-            moves = (flattened_scores.argsort(descending=True)[:value_move_num]).tolist()
+            # value_move_num = 6
+            # input = torch.Tensor(np.array(self.board)[1:-1, 1:-1]).unsqueeze(0)
+            # scores = mini_max_net(input)
+            # flattened_scores = scores.flatten()
+            #
+            # moves = (flattened_scores.argsort(descending=True)[:value_move_num]).tolist()
+            moves = 0
             # print(moves)
         else:
             moves, model_train_maxtrix = self._getMoves(role, depth, onThree, onlyFour)
             train_data = {"state": np.array(self.board)[1:-1, 1:-1], "scores": model_train_maxtrix}
         moves = [(move // self.size, move % self.size) for move in moves]
         # cut the self.board into normal size
-        print("moves", moves)
+        # print("moves", moves)
 
         return moves, train_data
 
@@ -459,11 +460,9 @@ class Evaluate:
             for point in fives:
                 x = point // self.size
                 y = point % self.size
-                model_train_matrix[x][y] = max(FIVE, model_train_matrix[x][y])
             for point in block_fives:
                 x = point // self.size
                 y = point % self.size
-                model_train_matrix[x][y] = max(BLOCK_FIVE, model_train_matrix[x][y])
 
             return set(list(fives) + list(block_fives)), model_train_matrix
 
@@ -473,12 +472,10 @@ class Evaluate:
             for point in fours:
                 x = point // self.size
                 y = point % self.size
-                model_train_matrix[x][y] = max(FOUR, model_train_matrix[x][y])
 
             for point in block_fours:
                 x = point // self.size
                 y = point % self.size
-                model_train_matrix[x][y] = max(BLOCK_FOUR, model_train_matrix[x][y])
 
             return set(list(fours) + list(block_fours)), model_train_matrix
 
@@ -487,12 +484,10 @@ class Evaluate:
             for point in four_fours:
                 x = point // self.size
                 y = point % self.size
-                model_train_matrix[x][y] = max(FOUR_FOUR, model_train_matrix[x][y])
 
             for point in block_fours:
                 x = point // self.size
                 y = point % self.size
-                model_train_matrix[x][y] = max(BLOCK_FOUR, model_train_matrix[x][y])
 
             return set(list(four_fours) + list(block_fours)), model_train_matrix
 
@@ -503,17 +498,14 @@ class Evaluate:
             for point in four_threes:
                 x = point // self.size
                 y = point % self.size
-                model_train_matrix[x][y] = max(FOUR_THREE, model_train_matrix[x][y])
 
             for point in block_fours:
                 x = point // self.size
                 y = point % self.size
-                model_train_matrix[x][y] = max(BLOCK_FOUR, model_train_matrix[x][y])
 
             for point in threes:
                 x = point // self.size
                 y = point % self.size
-                model_train_matrix[x][y] = max(THREE, model_train_matrix[x][y])
 
             return set(list(four_threes) + list(block_fours) + list(threes)), model_train_matrix
 
@@ -523,17 +515,14 @@ class Evaluate:
             for point in three_threes:
                 x = point // self.size
                 y = point % self.size
-                model_train_matrix[x][y] = max(THREE_THREE, model_train_matrix[x][y])
 
             for point in block_fours:
                 x = point // self.size
                 y = point % self.size
-                model_train_matrix[x][y] = max(BLOCK_FOUR, model_train_matrix[x][y])
 
             for point in threes:
                 x = point // self.size
                 y = point % self.size
-                model_train_matrix[x][y] = max(THREE, model_train_matrix[x][y])
 
             return set(list(three_threes) + list(block_fours) + list(threes)), model_train_matrix
 
@@ -541,45 +530,18 @@ class Evaluate:
             for point in threes:
                 x = point // self.size
                 y = point % self.size
-                model_train_matrix[x][y] = max(THREE, model_train_matrix[x][y])
 
             for point in block_fours:
                 x = point // self.size
                 y = point % self.size
-                model_train_matrix[x][y] = max(BLOCK_FOUR, model_train_matrix[x][y])
             return set(list(block_fours) + list(threes)), model_train_matrix
 
         block_threes = points[shapes['BLOCK_THREE']]
         two_twos = points[shapes['TWO_TWO']]
         twos = points[shapes['TWO']]
 
-        for point in block_threes:
-            x = point // self.size
-            y = point % self.size
-            model_train_matrix[x][y] = max(BLOCK_THREE, model_train_matrix[x][y])
-
-        for point in two_twos:
-            x = point // self.size
-            y = point % self.size
-            model_train_matrix[x][y] = max(TWO_TWO, model_train_matrix[x][y])
-
-        for point in twos:
-            x = point // self.size
-            y = point % self.size
-            model_train_matrix[x][y] = max(TWO, model_train_matrix[x][y])
-
-        for point in block_fours:
-            x = point // self.size
-            y = point % self.size
-            model_train_matrix[x][y] = max(BLOCK_FOUR, model_train_matrix[x][y])
-
-        for point in threes:
-            x = point // self.size
-            y = point % self.size
-            model_train_matrix[x][y] = max(THREE, model_train_matrix[x][y])
-
         mid = list(block_fours) + list(threes) + list(block_threes) + list(two_twos) + list(twos)
-        res = set(mid[:5]) # choose the first 5 points
+        res = set(mid[:10])
         for i in range(len(model_train_matrix)):
             for j in range(len(model_train_matrix)):
                 if (i * len(model_train_matrix) + j) not in res:

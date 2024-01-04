@@ -172,7 +172,7 @@ class MCTS(object):
         need_time = time.time() - start_time
         
         # print(f" PureMCTS sum_time: {need_time / self._n_playout }, total_simulation: {self._n_playout}")
-        print(f" PureMCTS sum_time: {need_time}, total_simulation: {self._n_playout}")
+        print(f" PureMCTS sum_time: {need_time}, average_time: {need_time / self._n_playout} total_simulation: {self._n_playout}")
 
         return max(self._root._children.items(),key=lambda act_node: act_node[1]._n_visits)[0], need_time / self._n_playout
 

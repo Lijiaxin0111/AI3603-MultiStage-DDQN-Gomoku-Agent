@@ -6,7 +6,7 @@ import pickle
 import os
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
-from tensorboardX import SummaryWriter
+# from tensorboardX import SummaryWriter
 from tqdm import tqdm
 import datetime
 from torch.utils.data import DataLoader, TensorDataset

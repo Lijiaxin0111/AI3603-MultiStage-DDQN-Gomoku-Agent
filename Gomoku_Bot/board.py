@@ -1,6 +1,6 @@
-from zobrist import ZobristCache as Zobrist
-from cache import Cache
-from eval import Evaluate, FIVE
+from .zobrist import ZobristCache as Zobrist
+from .cache import Cache
+from .eval import Evaluate, FIVE
 from scipy import signal
 import pickle
 import os
@@ -142,15 +142,15 @@ class Board:
         # 开局的时候随机走一步，增加开局的多样性
         if not onlyThree and not onlyFour:
             center = self.size // 2
-            # if self.board[center][center] == 0:
-            #     moves.append((center, center))
+            if self.board[center][center] == 0:
+                moves.append((center, center))
 
-            x_step = np.random.randint(-self.size // 2, self.size // 2)
-            y_step = np.random.randint(-self.size // 2, self.size // 2)
-            x = center + x_step
-            y = center + y_step
-            if self.size > x >= 0 == self.board[x][y] and 0 <= y < self.size:
-                moves.append((x, y))
+            # x_step = np.random.randint(-self.size // 2, self.size // 2)
+            # y_step = np.random.randint(-self.size // 2, self.size // 2)
+            # x = center + x_step
+            # y = center + y_step
+            # if 0 <= x < self.size and 0 <= y < self.size and self.board[x][y] == 0:
+            #     moves.append((x, y))
 
         self.valuableMovesCache.put(hash, {
             "role": role,

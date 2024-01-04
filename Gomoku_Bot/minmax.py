@@ -1,6 +1,5 @@
-from cache import Cache
-from eval import FIVE
-
+from .cache import Cache
+from .eval import FIVE
 # Checked
 
 
@@ -16,17 +15,18 @@ cache = Cache()
 
 
 def factory(onlyThree=False, onlyFour=False):
+
     def helper(board, role, depth, cDepth=0, path=(), alpha=-MAX, beta=MAX):
         cache_hits["search"] += 1
         if cDepth >= depth or board.isGameOver():
-            return [board.evaluate(role), None, path]
+            return [board.evaluate(role), None, (path)]
         hash = board.hash()
         prev = cache.get(hash)
         if prev and prev["role"] == role:
             if (
-                    (abs(prev["value"]) >= FIVE or prev["depth"] >= depth - cDepth)
-                    and prev["onlyThree"] == onlyThree
-                    and prev["onlyFour"] == onlyFour
+                (abs(prev["value"]) >= FIVE or prev["depth"] >= depth - cDepth)
+                and prev["onlyThree"] == onlyThree
+                and prev["onlyFour"] == onlyFour
             ):
                 cache_hits["hit"] += 1
                 return [prev["value"], prev["move"], path + prev["path"]]
@@ -40,7 +40,7 @@ def factory(onlyThree=False, onlyFour=False):
             print('points:', points)
         if not len(points):
             return [board.evaluate(role), None, path]
-        for d in range(cDepth + 1, depth + 1):  # cDepth is the current depth, d is the depth to search
+        for d in range(cDepth + 1, depth + 1):
             # 迭代加深过程中只找己方能赢的解，因此只搜索偶数层即可
             if d % 2 != 0:
                 continue
@@ -48,8 +48,7 @@ def factory(onlyThree=False, onlyFour=False):
             for point in points:
                 board.put(point[0], point[1], role)
                 newPath = tuple(list(path) + [point])  # Add current move to path
-                currentValue, currentMove, currentPath = helper(board, -role, d, cDepth + 1, tuple(newPath), -beta,
-                                                                -alpha)
+                currentValue, currentMove, currentPath = helper(board, -role, d, cDepth + 1, tuple(newPath) , -beta, -alpha)
                 currentValue = -currentValue
                 board.undo()
                 ## 迭代加深的过程中，除了能赢的棋，其他都不要
@@ -58,8 +57,8 @@ def factory(onlyThree=False, onlyFour=False):
                 if currentValue >= FIVE or d == depth:
                     # 必输的棋，也要挣扎一下，选择最长的路径
                     if (
-                            currentValue > value
-                            or (currentValue <= -FIVE and value <= -FIVE and len(currentPath) > bestDepth)
+                        currentValue > value
+                        or (currentValue <= -FIVE and value <= -FIVE and len(currentPath) > bestDepth)
                     ):
                         value = currentValue
                         move = point
@@ -85,7 +84,6 @@ def factory(onlyThree=False, onlyFour=False):
                 "onlyFour": onlyFour,
             })
         return [value, move, bestPath]
-
     return helper
 
 
@@ -95,6 +93,7 @@ vcf = factory(False, True)
 
 
 def minmax(board, role, depth=4, enableVCT=False):
+
     if enableVCT:
         vctDepth = depth + 8
         value, move, bestPath = vct(board, role, vctDepth)
@@ -114,7 +113,7 @@ def minmax(board, role, depth=4, enableVCT=False):
         if value < FIVE and value2 == FIVE and len(bestPath2) > len(bestPath):
             value3, move3, bestPath3 = vct(board.reverse(), role, vctDepth)
             if len(bestPath2) <= len(bestPath3):
-                return [value, move2, bestPath2]  # value2 是被挡住的，所以这里还是用value
+                return [value, move2, bestPath2] # value2 是被挡住的，所以这里还是用value
         return [value, move, bestPath]
     else:
         return _minmax(board, role, depth)

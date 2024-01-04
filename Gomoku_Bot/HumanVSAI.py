@@ -2,9 +2,9 @@ import os
 import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from board import Board
-from minmax import vct, cache_hits, minmax
-from eval import FIVE, FOUR, performance
+from .board import Board
+from .minmax import vct, cache_hits, minmax
+from .eval import FIVE, FOUR, performance
 
 
 class Game():
@@ -30,6 +30,7 @@ class Game():
                     score = minmax(self.board, 1, 4, enableVCT=self.enableVCT)
                     print(score)
                     x, y = score[1]
+                    print("move at", x, y)
                     self.board.put(x, y)
                 self.step += 1
         else:
@@ -50,4 +51,4 @@ class Game():
 
 if __name__ == '__main__':
     game = Game()
-    game.start_play(False)
+    game.start_play(True)

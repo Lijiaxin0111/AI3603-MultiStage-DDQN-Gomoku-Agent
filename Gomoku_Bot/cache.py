@@ -1,5 +1,5 @@
 from cachetools import LRUCache
-from config import config
+from .config import config
 
 class Cache:
     def __init__(self, capacity=1000000):
