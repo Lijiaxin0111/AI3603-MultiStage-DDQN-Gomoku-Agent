@@ -3,6 +3,31 @@
 <a href='https://github.com/Lijiaxin0111/AI_3603_BIGHOME'><img src='https://img.shields.io/badge/Project-Page-Green'></a> 
 <a href='https://notes.sjtu.edu.cn/dl9X8nY6TOSIFltbUP5y2g'><img src='https://img.shields.io/badge/MidtermReport-PDF-red'></a> <a href='https://huggingface.co/spaces/Gomoku-Zero/Demo'><img src='https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Spaces-blue'> 
 
+
+## Edge Blindness && Merciful Strategy
+
+### Before
+
+<div align="center">
+  <img width="500" height="400" src="https://github.com/Lijiaxin0111/AI_3603_BIGHOME/assets/91367324/c6c4afdf-33a7-4d4d-b157-d0cc4750be57"/>
+  
+<img width="500" height="400" src="https://github.com/Lijiaxin0111/AI_3603_BIGHOME/assets/91367324/52af3158-7183-448a-beee-97c1abdad6f8"/>  
+</div>
+
+
+### After
+
+[Click here to watch the video](https://drive.google.com/file/d/1wZSCDxfTGkbVvGuzCZpgi2NIDenlNRLe/view)
+
+<img width="500" height="400" src="https://github.com/Lijiaxin0111/AI_3603_BIGHOME/blob/main/assets/demo.gif"/>  
+
+
+
+
+
+
+
+
 ## Todo
 - [ ] **Huggingface Space Web 多模型部署**
   - [ ] Human VS AI
