@@ -27,6 +27,9 @@ from torch.backends import cudnn
 import torch
 import json
 
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from Gomoku_Bot import Gomoku_bot
+
 from tqdm import *
 # from torch.utils.tensorboard import SummaryWriter
 
@@ -95,7 +98,8 @@ class MainWorker():
 
         if opts.preload_model:
             if opts.model_type == "duel":
-                print("preload duel model")
+                print("preload duel model from {}".format(opts.preload_model))
+
             # start training from an initial policy-value net
                 self.policy_value_net = dueling_PolicyValueNet(self.board_width,
                                                        self.board_height,
@@ -154,9 +158,14 @@ class MainWorker():
             print("[Now] The MCTS PLATER: Gumbel_Alphazero ")
 
         if opts.data_collect == 1:
-            self.high_player = MCTSPlayer(self.policy_value_net.policy_value_fn,
-                                          c_puct=self.c_puct,
-                                          n_playout=self.n_playout)
+            if opts.high_player == "pure mcts":
+                self.high_player = MCTSPlayer(self.policy_value_net.policy_value_fn,
+                                              c_puct=self.c_puct,
+                                              n_playout=self.n_playout)
+            elif opts.high_player == "gomokubot":
+                self.high_player = Gomoku_bot(self.board_width, first_role = -1, role = 1)
+            else:
+                raise ValueError("illegal high player")
 
         # The set of optimizer
         self.optimizer = optim.Adam(self.policy_value_net.policy_value_net.parameters(),

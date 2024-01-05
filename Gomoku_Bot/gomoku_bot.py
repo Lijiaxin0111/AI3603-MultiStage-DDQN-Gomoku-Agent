@@ -4,7 +4,7 @@ from .board import Board
 
 
 class Gomoku_bot:
-    def __init__(self, board_size, first_role = 1, role = 1, depth=4, enableVCT=True):
+    def __init__(self, board_size, first_role = 1, role = 1, depth=4, enableVCT=False):
         self.board = Board(board_size, first_role) # -1 for black, 1 for white, -1 means 2
         self.role = role
         self.depth = depth

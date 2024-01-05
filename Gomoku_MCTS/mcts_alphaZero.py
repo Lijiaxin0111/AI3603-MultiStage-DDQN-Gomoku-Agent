@@ -17,6 +17,7 @@ import sys
 from config.utils import *
 from some_Gomoku_trick.board_cut import board_cut
 
+
 def softmax(x):
     probs = np.exp(x - np.max(x))
     probs /= np.sum(probs)
@@ -128,7 +129,6 @@ class MCTS(object):
             # print("avai:", state.availables)
             state.do_move(action)
 
-
         if lock is not None:
             lock.release()
         # Evaluate the leaf using a network which outputs a list of
@@ -178,22 +178,20 @@ class MCTS(object):
         t = time.time()
         #  ---------
         act_probs, leaf_value = self._policy(state)
-        
-        act_probs =  list(act_probs)
+
+        act_probs = list(act_probs)
 
         # leaf_value = leaf_value.detach().numpy()[0][0]
-        
+
         # print(list(act_probs))
-        porbs = [prob  for act,prob in (act_probs)]
+        porbs = [prob for act, prob in (act_probs)]
         # print("net ",porbs)
         # print("net_arg:",np.argmax(porbs))
-        
+
         #  ---------
 
-        
         for n in range(self._n_playout):
             start_time = time.time()
-            
 
             state_copy = copy.deepcopy(state)
             self._playout(state_copy)
@@ -211,7 +209,7 @@ class MCTS(object):
         acts, visits = zip(*act_visits)
 
         act_probs = softmax(1.0 / temp * np.log(np.array(visits) + 1e-10))
-     
+
         return 0, acts, act_probs, total_time
 
     def update_with_move(self, last_move):
@@ -242,12 +240,13 @@ class MCTSPlayer(object):
     def reset_player(self):
         self.mcts.update_with_move(-1)
 
-    def get_action(self, board, temp=1e-3, return_prob=0, return_time=False, use_kill = False):
+    def get_action(self, board, temp=1e-3, return_prob=0, return_time=False, use_kill=opts.use_kill):
 
         if use_kill:
+            print("using kill")
             move = find_live_four_completion(board, self.player)
             if move:
-                print("killing!")
+                print("successfullt killed!")
                 print(move)
                 return move
 
@@ -261,10 +260,9 @@ class MCTSPlayer(object):
             # print("return", move_probs)
             # print("return_max", np.argmax(move_probs))
 
-    
-            if opts.board_cut :
-                move_probs = board_cut(board,move_probs)
-                probs =  move_probs[list(acts)]
+            if opts.board_cut:
+                move_probs = board_cut(board, move_probs)
+                probs = move_probs[list(acts)]
 
             if self._is_selfplay:
                 # add Dirichlet Noise for exploration (needed for
@@ -281,15 +279,13 @@ class MCTSPlayer(object):
                 move = np.random.choice(acts, p=probs)
                 # reset the root node
                 self.mcts.update_with_move(-1)
-            
+
             #                location = board.move_to_location(move)
             #                print("AI move: %d,%d\n" % (location[0], location[1]))
-            
-            
-#                location = board.move_to_location(move)
-#                print("AI move: %d,%d\n" % (location[0], location[1]))
-            # print("final move", move)
 
+            #                location = board.move_to_location(move)
+            #                print("AI move: %d,%d\n" % (location[0], location[1]))
+            # print("final move", move)
 
             if return_time:
 

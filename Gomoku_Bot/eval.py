@@ -541,7 +541,7 @@ class Evaluate:
         twos = points[shapes['TWO']]
 
         mid = list(block_fours) + list(threes) + list(block_threes) + list(two_twos) + list(twos)
-        res = set(mid[:10])
+        res = set(mid[:4])
         for i in range(len(model_train_matrix)):
             for j in range(len(model_train_matrix)):
                 if (i * len(model_train_matrix) + j) not in res:

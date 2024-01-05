@@ -19,6 +19,7 @@ from policy_value_net_pytorch_new import PolicyValueNet as alpha_PolicyValueNet
 from dueling_net import PolicyValueNet as duel_PolicyValueNet
 from mcts_Gumbel_Alphazero import Gumbel_MCTSPlayer
 import sys
+from config.options import *
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from Gomoku_Bot import Gomoku_bot
@@ -260,68 +261,6 @@ class Game(object):
                     else:
                         print("Game end. Tie")
                 return winner, zip(states, mcts_probs, winners_z)
-        
-    def start_play_collect(self, player1_train, player2_high, is_shown = 0, temp = 1e-3,start_player = 0):
-        """
-        start a self-play game using a MCTS player, reuse the search tree,
-        and store the self-play data: (state, mcts_probs, z) for training
-        """
-            
-        """start a game between two players, store the self-play data: (state, mcts_probs, z) for training"""
-        if start_player not in (0, 1):
-            raise Exception('start_player should be either 0 (player1 first) '
-                            'or 1 (player2 f1irst)')
-        
-        self.board.init_board(start_player)
-        p1, p2 = self.board.players
-        player1_train.set_player_ind(p1)
-        player2_high.set_player_ind(p2)
-        players = {p1: player1_train, p2: player2_high}
-        states, mcts_probs, current_players = [], [], []
-        while True:
-            current_player = self.board.get_current_player()
-         
-            player_in_turn = players[current_player]
-
-            if current_player == p2:
-                move = player_in_turn.get_action(self.board)
-                current_players.append(self.board.current_player)
-                
-             
-
-            elif current_player == p1:
-                move,move_probs = player_in_turn.get_action(self.board,
-                                                 temp=temp,
-                                                 return_prob=1)
-                states.append(self.board.current_state())
-                mcts_probs.append(move_probs)
-                current_players.append(self.board.current_player)
-            
-          
-                
-                # print(self.board.availables)
-
-            self.board.do_move(move)
-            if is_shown:
-                self.graphic(self.board, p1, p2)
-            end, winner = self.board.game_end()
-
-            if end:
-                winners_z = np.zeros(len(current_players))
-                if winner != -1:
-                    winners_z[np.array(current_players) == winner] = 1.0
-                    winners_z[np.array(current_players) != winner] = -1.0
-                # reset MCTS root node
-                    
-                player1_train.reset_player()
-                winners_z = winners_z[np.array(current_players) == p1]
-
-                if is_shown:
-                    if winner != -1:
-                        print("Game end. Winner is player:", winner)
-                    else:
-                        print("Game end. Tie")
-                return winner, zip(states, mcts_probs, winners_z)
 
     def start_parser(self, out_file,is_shown = 0):
         """
@@ -387,7 +326,7 @@ class Game(object):
                         print("Game end. Tie")
                 return winner, zip(states, mcts_probs, winners_z)
         
-    def start_play_collect(self, player1_train, player2_high, is_shown = 0, temp = 1e-3,start_player = 0):
+    def start_play_collect(self, player1_train, player2_high, is_shown = 1, temp = 1e-3,start_player = 0):
         """
         start a self-play game using a MCTS player, reuse the search tree,
         and store the self-play data: (state, mcts_probs, z) for training
@@ -396,8 +335,12 @@ class Game(object):
         """start a game between two players, store the self-play data: (state, mcts_probs, z) for training"""
         if start_player not in (0, 1):
             raise Exception('start_player should be either 0 (player1 first) '
-                            'or 1 (player2 f1irst)')
-        
+                            'or 1 (player2 first)')
+
+        p_map = [1, -1] # don't wrong the role
+        if opts.high_player == "gomokubot" and opts.data_collect == 1:
+            player2_high.set_role(first_role=-1, role=p_map[start_player])
+
         self.board.init_board(start_player)
         p1, p2 = self.board.players
         player1_train.set_player_ind(p1)
@@ -412,6 +355,8 @@ class Game(object):
             if current_player == p2:
                 move = player_in_turn.get_action(self.board)
                 current_players.append(self.board.current_player)
+                if isinstance(move, tuple):
+                    move = move[0]
                 
              
 
@@ -422,15 +367,24 @@ class Game(object):
                 states.append(self.board.current_state())
                 mcts_probs.append(move_probs)
                 current_players.append(self.board.current_player)
+                if isinstance(move, tuple):
+                    move = move[0]
             
           
-                
+            print(f"move is from {current_player}: ", move)
                 # print(self.board.availables)
+
+            if opts.high_player == "gomokubot" and opts.data_collect == 1:
+                print("put move")
+                print(self.board.width - 1 - move // self.board.width, move % self.board.width)
+                players[p2].board.put(int(self.board.width - 1 - move // self.board.width), int(move % self.board.width))
 
             self.board.do_move(move)
             if is_shown:
                 self.graphic(self.board, p1, p2)
             end, winner = self.board.game_end()
+
+            print("winner is ", winner)
 
             if end:
                 winners_z = np.zeros(len(current_players))
@@ -463,8 +417,14 @@ class Game(object):
         option = "gomokubot"
 
         if option == "duel":
-            pi_eval = duel_PolicyValueNet(self.board.width, self.board.height,
-                                 model_file=r'/Users/husky/AI_3603_BIGHOME/Gomoku_MCTS/checkpoint/2023-12-22-11-53-57_final-100th-duel_epochs=1000_size=9_model=duel/best_policy.model')
+            # first Stage
+            if opts.stage == 1:
+                pi_eval = duel_PolicyValueNet(self.board.width, self.board.height,
+                                     model_file=r'/Users/husky/AI_3603_BIGHOME/Gomoku_MCTS/checkpoint/2023-12-22-11-53-57_final-100th-duel_epochs=1000_size=9_model=duel/best_policy.model')
+            elif opts.stage == 2: # second Stage
+                pi_eval = duel_PolicyValueNet(self.board.width, self.board.height, model_file= "/Users/husky/AI_3603_BIGHOME/Gomoku_MCTS/checkpoint/2024-01-04-11-22-46_second-stage-duel_epochs=1000_size=9_model=duel/best_policy.model")
+            else:
+                raise Exception("wrong stage")
         elif option == "biased":
             pi_eval = alpha_PolicyValueNet(self.board.width, self.board.height,
                                  model_file=r'/Users/husky/AI_3603_BIGHOME/Gomoku_MCTS/checkpoint/2023-12-14-11-40-49_test_teaching_learning_collect_epochs=1000_size=9_model=biased/best_policy.model')
@@ -497,7 +457,7 @@ class Game(object):
 
         # pure_mcts_player = Human_Player()
         win_cnt = defaultdict(int)
-        p_map = [- 1,1]
+        p_map = [-1,1]
         for i in range(n_games):
             if option == "gomokubot":
                 current_mcts_player.set_role(first_role=-1, role = p_map[i%2])
@@ -538,4 +498,4 @@ if __name__ == '__main__':
                   height=board_height,
                   n_in_row=n_in_row)
     task = Game(board)
-    task.policy_evaluate(n_games=50)
+    task.policy_evaluate(n_games=200)
