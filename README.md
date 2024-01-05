@@ -19,7 +19,7 @@
 
 [Click here to watch the video](https://drive.google.com/file/d/1wZSCDxfTGkbVvGuzCZpgi2NIDenlNRLe/view)
 
-
+<img width="500" height="400" src="https://github.com/Lijiaxin0111/AI_3603_BIGHOME/blob/main/assets/demo.gif"/>  
 
 
 
