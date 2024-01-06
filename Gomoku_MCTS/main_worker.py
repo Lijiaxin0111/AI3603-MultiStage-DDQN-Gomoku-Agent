@@ -27,6 +27,9 @@ from torch.backends import cudnn
 import torch
 import json
 
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from Gomoku_Bot import Gomoku_bot
+
 from tqdm import *
 # from torch.utils.tensorboard import SummaryWriter
 
@@ -95,7 +98,8 @@ class MainWorker():
 
         if opts.preload_model:
             if opts.model_type == "duel":
-                print("preload duel model")
+                print("preload duel model from {}".format(opts.preload_model))
+
             # start training from an initial policy-value net
                 self.policy_value_net = dueling_PolicyValueNet(self.board_width,
                                                        self.board_height,
@@ -107,14 +111,14 @@ class MainWorker():
                                                            self.board_height,
                                                            model_file=opts.preload_model,
                                                            use_gpu=(self.device == "cuda"),
-                                                           bias=True)
+                                                           bias=True, res_block_num=opts.res_num)
             elif opts.model_type == "normal" or "gumbel":
                 print("preload normal/gumbel model")
                 self.policy_value_net = new_PolicyValueNet(self.board_width,
                                                            self.board_height,
                                                            model_file=opts.preload_model,
                                                            use_gpu=(self.device == "cuda"),
-                                                           bias=False)
+                                                           bias=False,res_block_num=opts.res_num)
             else:
                 raise ValueError("illegal model type")
 
@@ -129,12 +133,12 @@ class MainWorker():
                 self.policy_value_net = new_PolicyValueNet(self.board_width,
                                                            self.board_height,
                                                            use_gpu=(self.device == "cuda"),
-                                                           bias=True)
+                                                           bias=True,res_block_num=opts.res_num)
             elif opts.model_type == "normal" or "gumbel":
                 self.policy_value_net = new_PolicyValueNet(self.board_width,
                                                            self.board_height,
                                                            use_gpu=(self.device == "cuda"),
-                                                           bias=False)
+                                                           bias=False,res_block_num=opts.res_num)
             else:
                 raise ValueError("illegal model type")
 
@@ -154,9 +158,14 @@ class MainWorker():
             print("[Now] The MCTS PLATER: Gumbel_Alphazero ")
 
         if opts.data_collect == 1:
-            self.high_player = MCTSPlayer(self.policy_value_net.policy_value_fn,
-                                          c_puct=self.c_puct,
-                                          n_playout=self.n_playout)
+            if opts.high_player == "pure mcts":
+                self.high_player = MCTSPlayer(self.policy_value_net.policy_value_fn,
+                                              c_puct=self.c_puct,
+                                              n_playout=self.n_playout)
+            elif opts.high_player == "gomokubot":
+                self.high_player = Gomoku_bot(self.board_width, first_role = -1, role = 1)
+            else:
+                raise ValueError("illegal high player")
 
         # The set of optimizer
         self.optimizer = optim.Adam(self.policy_value_net.policy_value_net.parameters(),
@@ -216,8 +225,8 @@ class MainWorker():
 
     def parser_output(self, outflies, n_games):
 
-        # ignore_opening_random = 3
-        # print(len(outflies))
+        ignore_opening_random = 0
+        # print(outflies)
         
 
         for i in range(n_games):
@@ -437,7 +446,8 @@ class MainWorker():
 
                     if opts.data_augment != 0:
                         dirname = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-                        output_dir = os.path.join(dirname, "generate_data","100_thousand_final")
+                        # output_dir = os.path.join(dirname, "generate_data","10_thousand_data")
+                        output_dir = os.path.join(dirname, "generate_data", "100_thousand_final")
 
                         
 

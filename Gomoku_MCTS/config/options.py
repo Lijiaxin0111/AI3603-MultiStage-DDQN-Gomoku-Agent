@@ -48,8 +48,9 @@ parser.add_argument("--kl_targ",type=float,default=0.02,help="the target kl dist
 parser.add_argument("--check_freq",type=int,default=10,help='the frequence of the checking the win ratio when training')
 parser.add_argument("--game_batch_num",type=int,default=1000,help =  "the total training times") #1500
 parser.add_argument("--data_collect",type=int,default=2,help =  "the source of data : 1: high play 2: outfile 0: self_play ")
+parser.add_argument("--high_player", type=str, choices=["pure mcts", "gomokubot"], default="pure_mcts", help="the high player")
 parser.add_argument("--data_augment",type=int,default=0, help =  "0: None data augment;  > 0: data augment , the number of data in one episode // 3")
-
+parser.add_argument("--use_kill", action = "store_true", default= False, help = "use kill or not")
 
 # parser.add_argument("--l2_const",type=float,default=1e-4,help=" coef of l2 penalty")
 parser.add_argument("--distributed",type=bool,default=False)
@@ -69,6 +70,7 @@ parser.add_argument("--mood", type=int,default= 0 ,help="the test mood:=  0: Alp
 parser.add_argument("--temp", type=float,default= 1.0 ,help="the temperature parameter when calculate the decision function getting the next action")
 parser.add_argument("--n_playout",type=int, default=200, help="num of simulations for each move ")
 parser.add_argument("--c_puct",type=int, default=5, help= "the balance parameter between exploration and exploitative ")
+parser.add_argument("--res_num", type=int,default= 5 ,help="the number of residual block in the network")
 
 # GumbelAlphazero agent setting
 parser.add_argument("--action_m",type=int, default=8, help="num of simulations for each move ")

@@ -18,6 +18,11 @@ from collections import defaultdict
 from policy_value_net_pytorch_new import PolicyValueNet as alpha_PolicyValueNet
 from dueling_net import PolicyValueNet as duel_PolicyValueNet
 from mcts_Gumbel_Alphazero import Gumbel_MCTSPlayer
+import sys
+from config.options import *
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from Gomoku_Bot import Gomoku_bot
 
 class Board(object):
     """board for the game"""
@@ -156,7 +161,7 @@ class Game(object):
 
     def __init__(self, board, **kwargs):
         self.board = board
-        self.pure_mcts_playout_num = 200  # simulation time
+        self.pure_mcts_playout_num = 2000  # simulation time
 
     def graphic(self, board, player1, player2):
         """Draw the board and show game info"""
@@ -169,12 +174,15 @@ class Game(object):
         for x in range(width):
             print("{0:8}".format(x), end='')
         print('\r\n')
+
         for i in range(height - 1, -1, -1):
             print("{0:4d}".format(i), end='')
             for j in range(width):
                 loc = i * width + j
                 p = board.states.get(loc, -1)
-                if p == player1:
+                if loc == board.last_move:
+                    print('H'.center(8), end='')
+                elif p == player1:
                     print('X'.center(8), end='')
                 elif p == player2:
                     print('O'.center(8), end='')
@@ -182,7 +190,7 @@ class Game(object):
                     print('_'.center(8), end='')
             print('\r\n\r\n')
 
-    def start_play(self, player1, player2, start_player=0, is_shown=1):
+    def start_play(self, player1, player2, start_player=0, is_shown=0, option = None):
         """start a game between two players"""
         if start_player not in (0, 1):
             raise Exception('start_player should be either 0 (player1 first) '
@@ -197,12 +205,16 @@ class Game(object):
         while True:
             current_player = self.board.get_current_player()
             player_in_turn = players[current_player]
+            # print(player_in_turn)
             move = player_in_turn.get_action(self.board)
+
             # if move has two elements, then choose the first
             if isinstance(move, tuple):
                 move = move[0]
-     
+            print(move)
             self.board.do_move(move)
+            if option == "gomokubot":
+                player1.board.put(board_width - 1 - move // board_width, move % board_width)
             if is_shown:
                 self.graphic(self.board, player1.player, player2.player)
             end, winner = self.board.game_end()
@@ -243,68 +255,6 @@ class Game(object):
                     winners_z[np.array(current_players) != winner] = -1.0
                 # reset MCTS root node
                 player.reset_player()
-                if is_shown:
-                    if winner != -1:
-                        print("Game end. Winner is player:", winner)
-                    else:
-                        print("Game end. Tie")
-                return winner, zip(states, mcts_probs, winners_z)
-        
-    def start_play_collect(self, player1_train, player2_high, is_shown = 0, temp = 1e-3,start_player = 0):
-        """
-        start a self-play game using a MCTS player, reuse the search tree,
-        and store the self-play data: (state, mcts_probs, z) for training
-        """
-            
-        """start a game between two players, store the self-play data: (state, mcts_probs, z) for training"""
-        if start_player not in (0, 1):
-            raise Exception('start_player should be either 0 (player1 first) '
-                            'or 1 (player2 f1irst)')
-        
-        self.board.init_board(start_player)
-        p1, p2 = self.board.players
-        player1_train.set_player_ind(p1)
-        player2_high.set_player_ind(p2)
-        players = {p1: player1_train, p2: player2_high}
-        states, mcts_probs, current_players = [], [], []
-        while True:
-            current_player = self.board.get_current_player()
-         
-            player_in_turn = players[current_player]
-
-            if current_player == p2:
-                move = player_in_turn.get_action(self.board)
-                current_players.append(self.board.current_player)
-                
-             
-
-            elif current_player == p1:
-                move,move_probs = player_in_turn.get_action(self.board,
-                                                 temp=temp,
-                                                 return_prob=1)
-                states.append(self.board.current_state())
-                mcts_probs.append(move_probs)
-                current_players.append(self.board.current_player)
-            
-          
-                
-                # print(self.board.availables)
-
-            self.board.do_move(move)
-            if is_shown:
-                self.graphic(self.board, p1, p2)
-            end, winner = self.board.game_end()
-
-            if end:
-                winners_z = np.zeros(len(current_players))
-                if winner != -1:
-                    winners_z[np.array(current_players) == winner] = 1.0
-                    winners_z[np.array(current_players) != winner] = -1.0
-                # reset MCTS root node
-                    
-                player1_train.reset_player()
-                winners_z = winners_z[np.array(current_players) == p1]
-
                 if is_shown:
                     if winner != -1:
                         print("Game end. Winner is player:", winner)
@@ -376,7 +326,7 @@ class Game(object):
                         print("Game end. Tie")
                 return winner, zip(states, mcts_probs, winners_z)
         
-    def start_play_collect(self, player1_train, player2_high, is_shown = 0, temp = 1e-3,start_player = 0):
+    def start_play_collect(self, player1_train, player2_high, is_shown = 1, temp = 1e-3,start_player = 0):
         """
         start a self-play game using a MCTS player, reuse the search tree,
         and store the self-play data: (state, mcts_probs, z) for training
@@ -385,8 +335,12 @@ class Game(object):
         """start a game between two players, store the self-play data: (state, mcts_probs, z) for training"""
         if start_player not in (0, 1):
             raise Exception('start_player should be either 0 (player1 first) '
-                            'or 1 (player2 f1irst)')
-        
+                            'or 1 (player2 first)')
+
+        p_map = [1, -1] # don't wrong the role
+        if opts.high_player == "gomokubot" and opts.data_collect == 1:
+            player2_high.set_role(first_role=-1, role=p_map[start_player])
+
         self.board.init_board(start_player)
         p1, p2 = self.board.players
         player1_train.set_player_ind(p1)
@@ -401,6 +355,8 @@ class Game(object):
             if current_player == p2:
                 move = player_in_turn.get_action(self.board)
                 current_players.append(self.board.current_player)
+                if isinstance(move, tuple):
+                    move = move[0]
                 
              
 
@@ -411,15 +367,24 @@ class Game(object):
                 states.append(self.board.current_state())
                 mcts_probs.append(move_probs)
                 current_players.append(self.board.current_player)
+                if isinstance(move, tuple):
+                    move = move[0]
             
           
-                
+            print(f"move is from {current_player}: ", move)
                 # print(self.board.availables)
+
+            if opts.high_player == "gomokubot" and opts.data_collect == 1:
+                print("put move")
+                print(self.board.width - 1 - move // self.board.width, move % self.board.width)
+                players[p2].board.put(int(self.board.width - 1 - move // self.board.width), int(move % self.board.width))
 
             self.board.do_move(move)
             if is_shown:
                 self.graphic(self.board, p1, p2)
             end, winner = self.board.game_end()
+
+            print("winner is ", winner)
 
             if end:
                 winners_z = np.zeros(len(current_players))
@@ -449,11 +414,17 @@ class Game(object):
         """
         current_mcts_player = MCTS_Pure(c_puct=5,
                                         n_playout=self.pure_mcts_playout_num)
-        option = "normal"
+        option = "gomokubot"
 
         if option == "duel":
-            pi_eval = duel_PolicyValueNet(self.board.width, self.board.height,
-                                 model_file=r'/Users/husky/AI_3603_BIGHOME/Gomoku_MCTS/checkpoint/2023-12-14-10-22-12_test_teaching_learning_collect_epochs=1000_size=9_model=duel/best_policy.model')
+            # first Stage
+            if opts.stage == 1:
+                pi_eval = duel_PolicyValueNet(self.board.width, self.board.height,
+                                     model_file=r'/Users/husky/AI_3603_BIGHOME/Gomoku_MCTS/checkpoint/2023-12-22-11-53-57_final-100th-duel_epochs=1000_size=9_model=duel/best_policy.model')
+            elif opts.stage == 2: # second Stage
+                pi_eval = duel_PolicyValueNet(self.board.width, self.board.height, model_file= "/Users/husky/AI_3603_BIGHOME/Gomoku_MCTS/checkpoint/2024-01-04-11-22-46_second-stage-duel_epochs=1000_size=9_model=duel/best_policy.model")
+            else:
+                raise Exception("wrong stage")
         elif option == "biased":
             pi_eval = alpha_PolicyValueNet(self.board.width, self.board.height,
                                  model_file=r'/Users/husky/AI_3603_BIGHOME/Gomoku_MCTS/checkpoint/2023-12-14-11-40-49_test_teaching_learning_collect_epochs=1000_size=9_model=biased/best_policy.model')
@@ -463,29 +434,54 @@ class Game(object):
         elif option == "gumbel":
             pi_eval = alpha_PolicyValueNet(self.board.width, self.board.height,
                                  model_file=r'/Users/husky/AI_3603_BIGHOME/Gomoku_MCTS/checkpoint/2023-12-14-21-19-40_selfplay_epochs=1000_size=9_model=gumbel/current_policy.model')
+        elif option == "gomokubot":
+            pass
         else:
             raise Exception("wrong option")
-        if option != "gumbel":
-            current_mcts_player = MCST_AlphaZero(pi_eval.policy_value_fn,
-                                             c_puct=5,
-                                             n_playout=self.pure_mcts_playout_num,
-                                             is_selfplay=0)
-        else:
+        if option == "gumbel":
             current_mcts_player = Gumbel_MCTSPlayer(pi_eval.policy_value_fn,
-                                             c_puct=5,
-                                             n_playout=self.pure_mcts_playout_num,
-                                             m_action=8)
+                                                    c_puct=5,
+                                                    n_playout=self.pure_mcts_playout_num,
+                                                    m_action=8)
 
-        # pure_mcts_player = MCTS_Pure(c_puct=5,
-        #                              n_playout=self.pure_mcts_playout_num)
+        elif option == "gomokubot":
+            current_mcts_player = Gomoku_bot(board_width, first_role = -1, role = 1)
+        else:
+            current_mcts_player = MCST_AlphaZero(pi_eval.policy_value_fn,
+                                                 c_puct=5,
+                                                 n_playout=200,
+                                                 is_selfplay=0)
 
-        pure_mcts_player = Human_Player()
+        pure_mcts_player = MCTS_Pure(c_puct=5,
+                                     n_playout=self.pure_mcts_playout_num)
+
+        # pure_mcts_player = Human_Player()
         win_cnt = defaultdict(int)
+        p_map = [-1,1]
         for i in range(n_games):
+            if option == "gomokubot":
+                current_mcts_player.set_role(first_role=-1, role = p_map[i%2])
             winner = self.start_play(current_mcts_player,
                                      pure_mcts_player,
                                      start_player=i % 2,
-                                     is_shown=1)
+                                     is_shown=1, option = option)
+            if winner == 2:
+                # get board and print
+                lose_dir = os.path.dirname(os.path.abspath(__file__)) + "/lose_board/"
+                if not os.path.exists(lose_dir):
+                    os.makedirs(lose_dir)
+                with open(lose_dir + f"lose_board_{i}.txt", "w") as f:
+                    # 将标准输出重定向到文件
+                    sys.stdout = f
+
+                    # 执行需要写入文件的代码
+                    self.graphic(self.board, current_mcts_player.player, pure_mcts_player.player)
+
+                    # 恢复标准输出
+                    sys.stdout = sys.__stdout__
+
+
+
             win_cnt[winner] += 1
         win_ratio = 1.0 * (win_cnt[1] + 0.5 * win_cnt[-1]) / n_games
         print("num_playouts:{}, win: {}, lose: {}, tie:{}".format(
@@ -502,4 +498,4 @@ if __name__ == '__main__':
                   height=board_height,
                   n_in_row=n_in_row)
     task = Game(board)
-    task.policy_evaluate(n_games=10)
+    task.policy_evaluate(n_games=200)

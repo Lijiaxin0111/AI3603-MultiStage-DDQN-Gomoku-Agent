@@ -154,7 +154,7 @@ class MCTS(object):
             self._playout(state_copy)
             start_time_averge += (time.time() - start_time)
         
-        print(f" My MCTS sum_time: {start_time_averge }, total_simulation: {self._n_playout}")
+        print(f" My MCTS sum_time: {start_time_averge }, average: {start_time_averge / self._n_playout} total_simulation: {self._n_playout}")
 
 
         # calc the move probabilities based on visit counts at the root node

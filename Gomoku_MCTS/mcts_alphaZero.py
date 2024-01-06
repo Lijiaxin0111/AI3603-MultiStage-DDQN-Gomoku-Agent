@@ -3,7 +3,6 @@
 Monte Carlo Tree Search in AlphaGo Zero style, which uses a policy-value
 network to guide the tree search and evaluate the leaf nodes
 
-@author: Junxiao Song
 """
 
 import numpy as np
@@ -11,11 +10,13 @@ import copy
 import time
 from concurrent.futures import ThreadPoolExecutor
 import threading
+from cal_kill import find_live_four_completion
 
 from config.options import *
 import sys
 from config.utils import *
 from some_Gomoku_trick.board_cut import board_cut
+
 
 def softmax(x):
     probs = np.exp(x - np.max(x))
@@ -128,7 +129,6 @@ class MCTS(object):
             # print("avai:", state.availables)
             state.do_move(action)
 
-
         if lock is not None:
             lock.release()
         # Evaluate the leaf using a network which outputs a list of
@@ -178,22 +178,20 @@ class MCTS(object):
         t = time.time()
         #  ---------
         act_probs, leaf_value = self._policy(state)
-        
-        act_probs =  list(act_probs)
+
+        act_probs = list(act_probs)
 
         # leaf_value = leaf_value.detach().numpy()[0][0]
-        
+
         # print(list(act_probs))
-        porbs = [prob  for act,prob in (act_probs)]
+        porbs = [prob for act, prob in (act_probs)]
         # print("net ",porbs)
         # print("net_arg:",np.argmax(porbs))
-        
+
         #  ---------
 
-        
         for n in range(self._n_playout):
             start_time = time.time()
-            
 
             state_copy = copy.deepcopy(state)
             self._playout(state_copy)
@@ -201,7 +199,8 @@ class MCTS(object):
         total_time = time.time() - t
         # print('!!time!!:', time.time() - t)
 
-        print(f" My MCTS sum_time: {total_time}, total_simulation: {self._n_playout}")
+        print(
+            f" My MCTS sum_time: {total_time}, average: {start_time_averge / self._n_playout} total_simulation: {self._n_playout}")
 
         # calc the move probabilities based on visit counts at the root node
         act_visits = [(act, node._n_visits)
@@ -210,7 +209,7 @@ class MCTS(object):
         acts, visits = zip(*act_visits)
 
         act_probs = softmax(1.0 / temp * np.log(np.array(visits) + 1e-10))
-     
+
         return 0, acts, act_probs, total_time
 
     def update_with_move(self, last_move):
@@ -241,7 +240,16 @@ class MCTSPlayer(object):
     def reset_player(self):
         self.mcts.update_with_move(-1)
 
-    def get_action(self, board, temp=1e-3, return_prob=0, return_time=False):
+    def get_action(self, board, temp=1e-3, return_prob=0, return_time=False, use_kill=opts.use_kill):
+
+        if use_kill:
+            print("using kill")
+            move = find_live_four_completion(board, self.player)
+            if move:
+                print("successfullt killed!")
+                print(move)
+                return move
+
         sensible_moves = board.availables
         # the pi vector returned by MCTS as in the alphaGo Zero paper
         move_probs = np.zeros(board.width * board.height)
@@ -252,10 +260,9 @@ class MCTSPlayer(object):
             # print("return", move_probs)
             # print("return_max", np.argmax(move_probs))
 
-    
-            if opts.board_cut :
-                move_probs = board_cut(board,move_probs)
-                probs =  move_probs[list(acts)]
+            if opts.board_cut:
+                move_probs = board_cut(board, move_probs)
+                probs = move_probs[list(acts)]
 
             if self._is_selfplay:
                 # add Dirichlet Noise for exploration (needed for
@@ -272,15 +279,13 @@ class MCTSPlayer(object):
                 move = np.random.choice(acts, p=probs)
                 # reset the root node
                 self.mcts.update_with_move(-1)
-            
+
             #                location = board.move_to_location(move)
             #                print("AI move: %d,%d\n" % (location[0], location[1]))
-            
-            
-#                location = board.move_to_location(move)
-#                print("AI move: %d,%d\n" % (location[0], location[1]))
-            # print("final move", move)
 
+            #                location = board.move_to_location(move)
+            #                print("AI move: %d,%d\n" % (location[0], location[1]))
+            # print("final move", move)
 
             if return_time:
 
