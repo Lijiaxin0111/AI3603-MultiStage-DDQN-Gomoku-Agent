@@ -11,7 +11,7 @@ from mcts_Gumbel_Alphazero import Gumbel_MCTSPlayer
 import torch.optim as optim
 # from policy_value_net import PolicyValueNet  # Theano and Lasagne
 # from policy_value_net_pytorch import PolicyValueNet  # Pytorch
-from dueling_net import PolicyValueNet as dueling_PolicyValueNet  # Pytorch
+# from dueling_net import PolicyValueNet as dueling_PolicyValueNet  # Pytorch
 from policy_value_net_pytorch_new import PolicyValueNet as new_PolicyValueNet  # Pytorch
 # from policy_value_net_tensorflow import PolicyValueNet # Tensorflow
 # from policy_value_net_keras import PolicyValueNet # Keras
@@ -216,15 +216,18 @@ class MainWorker():
 
     def parser_output(self, outflies, n_games):
 
-        ignore_opening_random = 3
-        # print(outflies)
+        # ignore_opening_random = 3
+        # print(len(outflies))
         
 
         for i in range(n_games):
             winner, play_data = self.game.start_parser(outflies[i])
-            print("[DATA] get_data from ", outflies[i])
+            # print("[DATA] get_data from ", outflies[i])
+            # print(len(outflies))
+        
 
-            play_data = list(play_data)[ignore_opening_random:]
+            play_data = list(play_data)
+            # print(play_data)
 
             play_data = self.get_equi_data(play_data)
             self.data_buffer.extend(play_data)
@@ -434,7 +437,7 @@ class MainWorker():
 
                     if opts.data_augment != 0:
                         dirname = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-                        output_dir = os.path.join(dirname, "generate_data","10_thousand_data")
+                        output_dir = os.path.join(dirname, "generate_data","100_thousand_final")
 
                         
 
@@ -454,12 +457,13 @@ class MainWorker():
                                 # print("get ", min(  len(split[j]) ,int(opts.data_augment)), "episode")
 
                         # files = split['1']  # 这里按照需要设置 胜者 1, 2 ; 平局 -1 , 可以平均随机一下
+                        # print(len(files))
             
                         self.parser_output(files, self.play_batch_size) # 建议把这个play_batch_size 调大一些
                 
                     else:
                         dirname = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-                        output_dir = os.path.join(dirname, "generate_data","10_thousand_data")
+                        output_dir = os.path.join(dirname, "generate_data","100_thousand_final")
 
                         files = os.listdir(output_dir)[1:] # 这里需要把json 跳掉
                    

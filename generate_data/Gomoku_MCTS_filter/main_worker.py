@@ -223,7 +223,9 @@ class MainWorker():
             winner, play_data = self.game.start_parser(outflies[i],is_shown=1)
             # print("[DATA] get_data from ", outflies[i])
             
-            # if winner != -1:
+            # if winner != 0:
+            #     return
+
             # better[winner].append(outflies[i].split('\\')[-1])
             # print(winner,":", outflies[i].split('\\')[-1] )  
         
@@ -234,6 +236,7 @@ class MainWorker():
             self.data_buffer.extend(play_data)
             # print(better)
             
+
             print("DONE")
 
    
@@ -248,8 +251,13 @@ class MainWorker():
         # print(outflies)
 
         for i in tq:
+            with open(outflies[i],"r") as file:
+                moves = file.readlines()
+            if len(moves) < 10: 
+                continue
             winner, play_data = self.game.start_parser(outflies[i])
             # print("[DATA] get_data from ", outflies[i])
+            
             
             # if winner != -1:
             better[winner].append(outflies[i].split('\\')[-1])
@@ -263,7 +271,7 @@ class MainWorker():
             # print(better)
             
 
-        with open(r"C:\Users\li_jiaxin\Desktop\AI3603\BGWH\code\AI_3603_BIGHOME\generate_data\10_thousand_data\data_split.json", "w") as json_file :
+        with open(r"C:\Users\li_jiaxin\Desktop\AI3603\BGWH\code\AI_3603_BIGHOME\generate_data\100_thousand_final\data_split.json", "w") as json_file :
             json.dump(better,json_file)
         print(better)
 
@@ -470,19 +478,21 @@ class MainWorker():
                 elif opts.data_collect == 2:
                     # get absolute path
                     dirname = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-                    output_dir = os.path.join(dirname,"10_thousand_data")
+                    output_dir = os.path.join(dirname,"100_thousand_final")
 
-                    with open(r"C:\Users\li_jiaxin\Desktop\AI3603\BGWH\code\AI_3603_BIGHOME\generate_data\10_thousand_data\data_split.json") as json_file :
-                        split = json.load(json_file)
+                    # with open(r"C:\Users\li_jiaxin\Desktop\AI3603\BGWH\code\AI_3603_BIGHOME\generate_data\50_thousand_data\data_split.json") as json_file :
+                    #     split = json.load(json_file)
+                    # files = split['2'] 
+                    # print(len(split["1"])+len(split["2"])+len(split["-1"]))
                     
-                    # files = os.listdir(output_dir)
-                    print(split)
-                    files = split['1'] 
+                    files = os.listdir(output_dir)
+                    # print(split)
+
                     
                     files = [os.path.join(output_dir,file) for file in files]
 
-                    # self.filter_parser_output(files)
-                    self.test_parser_output(files)
+                    self.filter_parser_output(files)
+                    # self.test_parser_output(files)
 
                 else:
                     self.collect_selfplay_data(self.play_batch_size)

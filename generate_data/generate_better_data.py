@@ -19,15 +19,19 @@ import os
 
 thread_num = 2
 
-episode = 9000
-cnt = 4119
 
-pis_root = r"D:\Program_File\piskvork\piskvork_win_lose"
+episode = 25000
+cnt = 83635
 
+# 差一千五
 
-ai_root = r"D:\Program_File\piskvork\other_agent"
+# [ENV] 在网站https://gomocup.org/download/, 下载piskvork.exe 并设置piskvork.exe路径
+pis_root = r"generate_data\text_files\manager"
 
-ai2 = r"D:\Program_File\piskvork\other_agent\pbrain-wine.exe"
+# [ENV] 存放Bot的文件夹
+ai_root = r"generate_data\text_files\bots_pool"
+
+# ai2 = r"D:\Program_File\piskvork\other_agent\pbrain-wine.exe"
 
 def run_bat_file(command):
     p = subprocess.Popen(command, shell=open)
@@ -36,27 +40,29 @@ def run_bat_file(command):
 ai_list = os.listdir(ai_root)
 
 
-
 for i in range(episode):
-
     # 随机获取ai
 
-    ai1 = os.path.join( random.sample(ai_list,k=1)[0])
+    #[ENV] 设置Bot名称
     ai2 = os.path.join( random.sample(ai_list,k=1)[0])
+    ai1 = os.path.join( random.sample(["pbrain-SlowRenju.exe","pbrain-SlowRenju_x64.exe","pbrain-whose20190401x64.exe","pbrain-Yixin2018.exe","pbrain-pela.exe"],k=1)[0])
+    
+    # ai1 = "pbrain-embryo18.exe"
+    # ai2 = "pbrain-embryo18.exe"
     print(ai1 + "  vs   " + ai2) 
 
     cnt += 1
 
     thread_list = []
 
-    # 单线程
-    out_file = "10_thousand_data\\out_better"+ str(cnt) +".txt"
+    #[CHANGE]存放输出数据的文件夹
+    out_file = r"generate_data\text_files\outfiles\out_better"+ str(cnt) +".txt"
     
-    
-    open_idx = str(random.randint(1,60))
+    open_idx = str(random.randint(500,1000))
     
     parameters = [pis_root,ai1,ai2, out_file,open_idx,ai_root]
-    command = "run_gomocu_manager.bat " + " ".join(parameters) 
+    # print(parameters)
+    command = r"generate_data\run_gomocu_manager.bat " + " ".join(parameters) 
 
 
     subprocess.run(command)

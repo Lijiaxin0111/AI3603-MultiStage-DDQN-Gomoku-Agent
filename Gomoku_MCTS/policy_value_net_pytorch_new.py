@@ -106,9 +106,9 @@ class PolicyValueNet():
         else:
             # the policy value net module
             if self.use_gpu:
-                self.policy_value_net = Net(board_width, board_height).to(self.device)
+                self.policy_value_net = Net(board_width, board_height,num_residual_blocks= 7 ).to(self.device)
             else:
-                self.policy_value_net = Net(board_width, board_height)
+                self.policy_value_net = Net(board_width, board_height,num_residual_blocks= 7 )
 
         self.optimizer = optim.Adam(self.policy_value_net.parameters(),
                                         weight_decay=self.l2_const)
