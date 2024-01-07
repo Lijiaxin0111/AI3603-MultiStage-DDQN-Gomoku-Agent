@@ -1,4 +1,4 @@
-from selenium import webdriver
+from  selenium import webdriver
 from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -33,17 +33,18 @@ chrome_options = webdriver.ChromeOptions()
 chrome_options.add_argument('--ignore-certificate-errors')
 # chrome_options.add_argument('--headless')  # 无头模式，不显示浏览器界面
 # chrome_options.add_argument('--proxy-server=' + proxy_url)
-driver = webdriver.Chrome(service=ChromeService(executable_path=chrome_driver_path), options=chrome_options)
+driver = webdriver.Chrome(executable_path=chrome_driver_path, options=chrome_options)
+# driver = webdriver.Chrome(service=ChromeService(executable_path=chrome_driver_path), options=chrome_options)
 
-opening_file = r"C:\Users\li_jiaxin\Desktop\AI3603\BGWH\code\AI_3603_BIGHOME\generate_data\one_thousand_opening.txt"
+opening_file = r"generate_data\one_thousand_opening.txt"
 cnt = 0
-N_page = 10
+# [CHANGE] 查看该比赛棋谱的网页数量修改下面的数字
+N_page = 5
 for i in range(1,N_page):
 
-
-
     # 目标网页的URL
-    url = f'https://www.ljrenju.com/news/rifchn1997/compr{i}.htm'
+    # [CHANGE] 修改
+    url = f'https://www.ljrenju.com/news/cnjsu2022/zhesp2022r{i}.htm'
 
     # 打开网页
     driver.get(url)

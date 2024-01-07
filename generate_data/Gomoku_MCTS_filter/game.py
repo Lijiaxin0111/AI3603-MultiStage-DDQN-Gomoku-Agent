@@ -321,6 +321,8 @@ class Game(object):
 
         with open(out_file,"r") as file:
             moves = file.readlines()
+   
+        
         # print("out::", moves)
     
         cnt = 2
@@ -329,6 +331,7 @@ class Game(object):
 
         while True:
             move_probs = np.zeros(self.board.width * self.board.height)
+        
             move = moves[cnt]
             cnt += 1
 
@@ -452,35 +455,40 @@ class Game(object):
                                         n_playout=self.pure_mcts_playout_num)
         option = "duel"
 
-        if option == "duel":
-            pi_eval = duel_PolicyValueNet(self.board.width, self.board.height,
-                                 model_file=r'/Users/husky/AI_3603_BIGHOME/Gomoku_MCTS/checkpoint/2023-12-14-11-43-01_test_teaching_learning_collect_epochs=1000_size=9_model=duel/best_policy.model')
-        elif option == "biased":
-            pi_eval = alpha_PolicyValueNet(self.board.width, self.board.height,
-                                 model_file=r'/Users/husky/AI_3603_BIGHOME/Gomoku_MCTS/checkpoint/2023-12-14-11-40-49_test_teaching_learning_collect_epochs=1000_size=9_model=biased/best_policy.model')
-        elif option == "normal":
-            pi_eval = alpha_PolicyValueNet(self.board.width, self.board.height,
-                                 model_file=r'/Users/husky/AI_3603_BIGHOME/Gomoku_MCTS/checkpoint/2023-12-14-11-41-03_test_teaching_learning_collect_epochs=1000_size=9_model=normal/best_policy.model')
-        elif option == "gumbel":
-            pi_eval = alpha_PolicyValueNet(self.board.width, self.board.height,
-                                 model_file=r'/Users/husky/AI_3603_BIGHOME/Gomoku_MCTS/checkpoint/2023-12-14-13-01-12_test_teaching_learning_collect_epochs=1000_size=9_model=gumbel/best_policy.model')
-        else:
-            raise Exception("wrong option")
-        if option != "gumbel":
-            current_mcts_player = MCST_AlphaZero(pi_eval.policy_value_fn,
-                                             c_puct=5,
-                                             n_playout=self.pure_mcts_playout_num,
-                                             is_selfplay=0)
-        else:
-            current_mcts_player = Gumbel_MCTSPlayer(pi_eval.policy_value_fn,
-                                             c_puct=5,
-                                             n_playout=self.pure_mcts_playout_num,
-                                             m_action=8)
+        # if option == "duel":
+        #     pi_eval = duel_PolicyValueNet(self.board.width, self.board.height,
+        #                          model_file=r'/Users/husky/AI_3603_BIGHOME/Gomoku_MCTS/checkpoint/2023-12-14-11-43-01_test_teaching_learning_collect_epochs=1000_size=9_model=duel/best_policy.model')
+        # elif option == "biased":
+        #     pi_eval = alpha_PolicyValueNet(self.board.width, self.board.height,
+        #                          model_file=r'/Users/husky/AI_3603_BIGHOME/Gomoku_MCTS/checkpoint/2023-12-14-11-40-49_test_teaching_learning_collect_epochs=1000_size=9_model=biased/best_policy.model')
+        # elif option == "normal":
+        #     pi_eval = alpha_PolicyValueNet(self.board.width, self.board.height,
+        #                          model_file=r'/Users/husky/AI_3603_BIGHOME/Gomoku_MCTS/checkpoint/2023-12-14-11-41-03_test_teaching_learning_collect_epochs=1000_size=9_model=normal/best_policy.model')
+        # elif option == "gumbel":
+        #     pi_eval = alpha_PolicyValueNet(self.board.width, self.board.height,
+        #                          model_file=r'/Users/husky/AI_3603_BIGHOME/Gomoku_MCTS/checkpoint/2023-12-14-13-01-12_test_teaching_learning_collect_epochs=1000_size=9_model=gumbel/best_policy.model')
+        # else:
+        #     raise Exception("wrong option")
+        # if option != "gumbel":
+        #     current_mcts_player = MCST_AlphaZero(pi_eval.policy_value_fn,
+        #                                      c_puct=5,
+        #                                      n_playout=self.pure_mcts_playout_num,
+        #                                      is_selfplay=0)
+        # else:
+        #     current_mcts_player = Gumbel_MCTSPlayer(pi_eval.policy_value_fn,
+        #                                      c_puct=5,
+        #                                      n_playout=self.pure_mcts_playout_num,
+        #                                      m_action=8)
+            
+            
+        current_mcts_player = MCTS_Pure(c_puct=5,
+                                     n_playout=2000)
+        # 5000 * 2000
+        # 5000 * 1000
+        # 5000 * 4000
 
-        # pure_mcts_player = MCTS_Pure(c_puct=5,
-        #                              n_playout=self.pure_mcts_playout_num)
-
-        pure_mcts_player = Human_Player()
+        pure_mcts_player =MCTS_Pure(c_puct=5,
+                                     n_playout=2000)
         win_cnt = defaultdict(int)
         for i in range(n_games):
             winner = self.start_play(current_mcts_player,
@@ -503,4 +511,5 @@ if __name__ == '__main__':
                   height=board_height,
                   n_in_row=n_in_row)
     task = Game(board)
-    task.policy_evaluate(n_games=10)
+    task.policy_evaluate(n_games=50)
+

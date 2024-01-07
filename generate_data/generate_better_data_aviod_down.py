@@ -22,8 +22,8 @@ import time
 
 thread_num = 2
 
-episode = 100
-cnt = 5002
+episode = 19000
+cnt = 82171
 
 pis_root = r"D:\Program_File\piskvork\piskvork_win_lose"
 
@@ -74,7 +74,7 @@ for i in range(episode):
 
     ai1 = os.path.join( random.sample(ai_list,k=1)[0])
     ai2 = os.path.join( random.sample(ai_list,k=1)[0])
-    ai1 = "pbrain-rapfi21.exe"
+    ai1 = os.path.join( random.sample(["pbrain-embryo18","pbrain-embryo21_e","pbrain-rapfi","pbrain-rapfi19","pbrain-rapfi21"],k=1)[0])
     print(ai1 + "  vs   " + ai2) 
 
 
@@ -83,10 +83,10 @@ for i in range(episode):
     thread_list = []
 
     # 单线程
-    out_file = "10_thousand_data_win_lose\\out_better"+ str(cnt) +".txt"
+    out_file = "100_thousand_after\\out_better"+ str(cnt) +".txt"
     
     
-    open_idx = str(random.randint(1,60))
+    open_idx = str(random.randint(500,1000))
 
     
     parameters = [pis_root,ai1,ai2, out_file,open_idx,ai_root]

@@ -27,6 +27,7 @@ echo %pis_root%\piskvork.exe -p %ai_root%\%ai1% %ai_root%\%ai2% -outfile %out_fi
 
 TASKKILL /T  /F /IM  %ai1%
 TASKKILL /T  /F /IM  %ai2%
+TASKKILL /T  /F /IM  piskvork.exe
 
 
 echo Done

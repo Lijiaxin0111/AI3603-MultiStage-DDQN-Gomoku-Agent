@@ -15,4 +15,12 @@ __pycache__
 
 *.model
 
+*.txt
 
+*.zip
+
+**/100_thousand_final/**
+
+**/10_thousand_data/**
+
+**/50_thousand_data/**

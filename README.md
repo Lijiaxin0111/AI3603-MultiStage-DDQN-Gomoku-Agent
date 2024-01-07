@@ -1,79 +1,83 @@
-# AI3603 Final Project: Gomoku Agent
-
-<a href='https://github.com/Lijiaxin0111/AI_3603_BIGHOME'><img src='https://img.shields.io/badge/Project-Page-Green'></a> 
-<a href='https://notes.sjtu.edu.cn/dl9X8nY6TOSIFltbUP5y2g'><img src='https://img.shields.io/badge/MidtermReport-PDF-red'></a> <a href='https://huggingface.co/spaces/Gomoku-Zero/Demo'><img src='https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Spaces-blue'> 
-
-
-## Edge Blindness && Merciful Strategy
-
-### Before
-
-<div align="center">
-  <img width="500" height="400" src="https://github.com/Lijiaxin0111/AI_3603_BIGHOME/assets/91367324/c6c4afdf-33a7-4d4d-b157-d0cc4750be57"/>
-  
-<img width="500" height="400" src="https://github.com/Lijiaxin0111/AI_3603_BIGHOME/assets/91367324/52af3158-7183-448a-beee-97c1abdad6f8"/>  
-</div>
-
-
-### After
-
-[Click here to watch the video](https://drive.google.com/file/d/1wZSCDxfTGkbVvGuzCZpgi2NIDenlNRLe/view)
-
-<img width="500" height="400" src="https://github.com/Lijiaxin0111/AI_3603_BIGHOME/blob/main/assets/demo.gif"/>  
+# README
 
 
 
 
 
+## 文件结构
 
 
 
-## Todo
-- [ ] **Huggingface Space Web 多模型部署**
-  - [ ] Human VS AI
-    - [x] AI assistant
-  - [ ] AI VS AI
-- [ ] **Alphazero边缘注意力提升**
-    - [ ] Board + Gaussian Distribution
-    - [ ] Let Alphazero play with huamn to collect datas relevant to edge-policy improvement?
-- [ ] Midterm Report
-- [ ] Final Report
+`generate_data`
+
+- `text_files`: 内含用于生成数据的Gomoku manager 、 Gomuku agent、以及1000开局棋谱
+- `crawl_new.py` : 跑取开局棋谱的脚本
+- `generate_better_data.py`   、 `generate_better_data_avoid_down.py` 、`generate_data.py` : 利用Gomoku manager生成数据的脚本
+- `Gomoku_MCTS_filter` ： 用于处理将数据按照胜负情况进行划分
+- `run_gomocu_manager.bat` ： 用于生成数据的bat脚本，被`generate_data.py`调用运行
+
+- `100_thousand_final`: 十万棋盘数据集
+
+
+
+``
+
+【TODO】
+
+
+
+## 训练模型的环境配置与运行命令
+
+
+
+【TODO】
 
 
 
 
 
-### 任务进度记录：
-- 2023-11-24.ljx.
-  - 增加highplayer接口
-  - 修改Gumbel_MCST的loss的bug 面前还在进一步测试
+## 生成数据代码的环境配置与运行命令
 
+爬取“励精连珠教室”里面的比赛棋谱开局
 
-- 2023-11-21.ljx.
-  - 复现了Gumbel_MCST
-  - 在main_workder里面增加了"--Player" 参数,'0' 为 Alphazero, '1' 为 Gumbel Alphazero 
-  - 在main_workder里面增加了"--mood" 参数,0: Alphazero Vs Pure;  1: Gumbel_Alphazero Vs Pure; 2:Alphazero Vs Gumbel_Alphazero ,仅在test，valid的时候起作用, train的时候记得设置好！！！不然valid的时候就不是需要的那个模型
+```jsx
+# 环境配置：第三方库安装
+pip install beautifulsoup4
+pip install selenium
 
-- 2023-11-19.hbh.
-  - 完成了可视化界面的初稿
-  
-- 2023-11-18.hbh.
-  - 跟进代码，了解项目结构
-  - 调研了一些最新的论文，了解优化方法
-  - 复习AlphaZero的原理
+# 环境配置：下载ChromeDriver，在代码中修改参数
+# [ENV] 设置ChromeDriver的路径
+chrome_driver_path = 'D:\\Program_File\\googledrive\\chromedriver.exe'
+# 运行脚本前修改代码参数
+# [CHANGE] 查看该比赛棋谱的网页数量修改下面的数字
+	N_page = 5
 
-- 2023-11-18.sjz.
-  -  将PI2.0服务器上的conda环境配置完成
-  -  对收集自我对弈数据部分进行了多进程并行，对playout部分进行了多线程并行
+# 目标网页的URL
+# [CHANGE] 修改
+  url = f'<https://www.ljrenju.com/news/cnjsu2022/zhesp2022r{i}.htm>'
 
-- 2023-11-17.sjz.
-  -  将思源一号服务器上的conda环境配置完成
-  -  对网络进行改进： 使用DuelingNet的架构: 有待验证 性能
+# 运行命令
+  python generate_data/crawler_new.py
+```
 
-- 2023-11-17. ljx. 对训练框架进行简单修改，增加了：
-  - 将网络里面train_step 的代码移植到main_worker中,之后写value net可以不用写train step函数
+设置Bot进行对弈产生数据
 
-- 2023-11-16. ljx. 对训练框架进行简单修改，增加了：
-  - 训练参数和代码的分离，可以通过命令行 、编写scrpt.sh （.bat） 脚本直接调整训练参数，方便后面写demo训练脚本
-  - 增加了进度条显示，不过因为他们的小训练轮次以及采集数据的轮次有点短，效果还不是很好
-  - 增加了用tensorboard 可视化曲线的功能，可视化”loss“，win_ratio 等
+```jsx
+# 运行命令
+# 注意本代码因为涉及运行.bat脚本，只能在wins使用
+# 如果在其他系统下运行，请将generate/run_gomocu_manager.bat转化为等价的bash文件
+  python generate_data/generate_better_data.py
+# 在github中的generate_data\\text_files已经存放了生成数据的exe文件
+# 在其他地方运行参考下面的介绍
+# 环境配置：下载Gomoku Manager， 并下载若干Bot
+# 修改generate/generate_better_data.py 下面的参数
+
+# [ENV] 在网站https://gomocup.org/download/, 下载piskvork.exe 并设置piskvork.exe路径
+	pis_root = r"D:\\Program_File\\piskvork\\piskvork_win_lose"
+
+# [ENV] 存放Bot的文件夹
+	ai_root = r"D:\\Program_File\\piskvork\\other_agent"
+
+#[CHANGE]存放输出数据的文件夹
+  out_file = "100_thousand_after\\\\out_better"+ str(cnt) +".txt"
+```
