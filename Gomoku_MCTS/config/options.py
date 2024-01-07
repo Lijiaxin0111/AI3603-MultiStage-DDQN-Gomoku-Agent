@@ -51,7 +51,9 @@ parser.add_argument("--data_collect",type=int,default=2,help =  "the source of d
 parser.add_argument("--high_player", type=str, choices=["pure mcts", "gomokubot"], default="pure_mcts", help="the high player")
 parser.add_argument("--data_augment",type=int,default=0, help =  "0: None data augment;  > 0: data augment , the number of data in one episode // 3")
 parser.add_argument("--use_kill", action = "store_true", default= False, help = "use kill or not")
-
+parser.add_argument("--increase_playout", action = "store_true", default= False, help = "increase the playout of puremcts by epochs when testing in training process")
+parser.add_argument("--stage", type=int, default=1, choices=[1,2,3], help="choose the model according to the stage of training. 1: Imitation Learning; 2: Self-Play; 3: VS Master")
+parser.add_argument("--n_game", type=int, default=10, help = "the number of games when testing in training process")
 # parser.add_argument("--l2_const",type=float,default=1e-4,help=" coef of l2 penalty")
 parser.add_argument("--distributed",type=bool,default=False)
 
@@ -69,20 +71,22 @@ parser.add_argument("--mood", type=int,default= 0 ,help="the test mood:=  0: Alp
 # Alphazero  agent setting
 parser.add_argument("--temp", type=float,default= 1.0 ,help="the temperature parameter when calculate the decision function getting the next action")
 parser.add_argument("--n_playout",type=int, default=200, help="num of simulations for each move ")
-parser.add_argument("--c_puct",type=int, default=5, help= "the balance parameter between exploration and exploitative ")
+parser.add_argument("--c_puct",type=int, default=5, help= "the balance parameter between exploration and exploitative for player1" )
+parser.add_argument("--c_puct2", type=int, default=5, help="the balance parameter between exploration and exploitative for player2 ")
 parser.add_argument("--res_num", type=int,default= 5 ,help="the number of residual block in the network")
-
 # GumbelAlphazero agent setting
 parser.add_argument("--action_m",type=int, default=8, help="num of simulations for each move ")
 
+# GomokuBot agent setting
+parser.add_argument("--start_edge", action="store_true", default=False, help="start with an edge move or not when using GomokuBot as highplayer")
 
 # prue_mcts agent setting
-parser.add_argument("--pure_mcts_playout_num",type=int, default=200)
+parser.add_argument("--pure_mcts_playout_num",type=int, default=2000)
 
-# test settings
+# test && game settings
 parser.add_argument('--test_ckpt', type=str, default=None, help='ckpt absolute path')
 parser.add_argument('--shown', type= int, default = 0,help="show the board in the game: 1: True; 0: False")
-
+parser.add_argument("--game_player", type=str, choices=["duel","biased", "gumbel", "normal", "gomokubot"], default="duel", help="choose the player to test in the game.py")
 
 opts = parser.parse_args()
 

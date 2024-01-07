@@ -16,8 +16,13 @@ export train_options="--expri third-stage-duel \
 --board_height 9 \
 --use_gpu 0 \
 --mood 0 \
+--game_batch_num 5 \
+--pure_mcts_playout_num 2000 \
+--n_game 20 \
 --data_collect 1 \
---check_freq 25 \
+--check_freq 1 \
+--start_edge
+--c_puct2 0 \
 --high_player gomokubot \
 --preload_model /Users/husky/AI_3603_BIGHOME/Gomoku_MCTS/checkpoint/2024-01-04-11-22-46_second-stage-duel_epochs=1000_size=9_model=duel/best_policy.model
 "

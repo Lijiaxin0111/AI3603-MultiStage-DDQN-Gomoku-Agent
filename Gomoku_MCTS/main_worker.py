@@ -145,7 +145,7 @@ class MainWorker():
 
         if opts.model_type != "gumbel":
             self.mcts_player = MCTSPlayer(self.policy_value_net.policy_value_fn,
-                                          c_puct=self.c_puct,
+                                          c_puct=opts.c_puct2,
                                           n_playout=self.n_playout,
                                           is_selfplay=1)
             print("[Now] The MCTS PLATER: Alphazero ")
@@ -163,7 +163,7 @@ class MainWorker():
                                               c_puct=self.c_puct,
                                               n_playout=self.n_playout)
             elif opts.high_player == "gomokubot":
-                self.high_player = Gomoku_bot(self.board_width, first_role = -1, role = 1)
+                self.high_player = Gomoku_bot(self.board_width, first_role = -1, role = 1, start_edge=opts.start_edge)
             else:
                 raise ValueError("illegal high player")
 
@@ -218,6 +218,13 @@ class MainWorker():
                                                     temp=self.temp)
 
         play_data = list(play_data)[:]
+
+        # check whether there exists inf or nan in play_data
+        for data in play_data:
+            if np.any(np.isnan(data[0])) or np.any(np.isinf(data[0])):
+                print("nan or inf in play_data")
+                print(data[0])
+                raise ValueError("nan or inf in play_data")
 
         play_data = self.get_equi_data(play_data)
 
@@ -345,7 +352,7 @@ class MainWorker():
 
         return kl, loss, entropy, explained_var_old, explained_var_new, value_loss, policy_loss
 
-    def policy_evaluate(self, n_games=10):
+    def policy_evaluate(self, n_games=opts.n_game):
         """
         Evaluate the trained policy by playing against the pure MCTS player
         Note: this is only for monitoring the progress of training
@@ -353,7 +360,7 @@ class MainWorker():
 
         if opts.model_type != "gumbel":
             current_mcts_player = MCTSPlayer(self.policy_value_net.policy_value_fn,
-                                             c_puct=self.c_puct,
+                                             c_puct=opts.c_puct2,
                                              n_playout=self.n_playout)
             print("[TEST] The MCTS PLATER: Alphazero ")
         elif opts.model_type == "gumbel":
@@ -516,10 +523,11 @@ class MainWorker():
                         self.best_win_ratio = win_ratio
                         # update the best_policy
                         save_model(self.policy_value_net.policy_value_net, "best_policy.model")
-                        if (self.best_win_ratio == 1.0 and
-                                self.pure_mcts_playout_num < 5000):
-                            self.pure_mcts_playout_num += 1000
-                            self.best_win_ratio = 0.0
+                        if opts.increase_playout:
+                            if (self.best_win_ratio == 1.0 and
+                                    self.pure_mcts_playout_num < 5000):
+                                self.pure_mcts_playout_num += 1000
+                                self.best_win_ratio = 0.0
         except KeyboardInterrupt:
             print('\n\rquit')
 
