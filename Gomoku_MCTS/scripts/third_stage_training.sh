@@ -24,7 +24,7 @@ export train_options="--expri third-stage-duel \
 --start_edge
 --c_puct2 0 \
 --high_player gomokubot \
---preload_model /Users/husky/AI_3603_BIGHOME/Gomoku_MCTS/checkpoint/2024-01-04-11-22-46_second-stage-duel_epochs=1000_size=9_model=duel/best_policy.model
+--preload_model ./checkpoint/first-stage-100th-duel_epochs=1000_size=9_model=duel/best_policy.model
 "
 
 run_cmd="python -u main_worker.py $train_options"

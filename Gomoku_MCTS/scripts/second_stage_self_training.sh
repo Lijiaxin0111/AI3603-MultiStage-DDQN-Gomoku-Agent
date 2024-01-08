@@ -18,7 +18,7 @@ export train_options="--expri second-stage-duel \
 --mood 0 \
 --data_collect 0 \
 --check_freq 25 \
---preload_model /Users/husky/AI_3603_BIGHOME/Gomoku_MCTS/checkpoint/2023-12-22-11-53-57_final-100th-duel_epochs=1000_size=9_model=duel/best_policy.model
+--preload_model ./checkpoint/first-stage-100th-duel_epochs=1000_size=9_model=duel/best_policy.model
 "
 
 run_cmd="python -u main_worker.py $train_options"

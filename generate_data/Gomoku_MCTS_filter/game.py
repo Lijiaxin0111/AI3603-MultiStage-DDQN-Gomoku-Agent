@@ -460,7 +460,7 @@ class Game(object):
         #                          model_file=r'/Users/husky/AI_3603_BIGHOME/Gomoku_MCTS/checkpoint/2023-12-14-11-43-01_test_teaching_learning_collect_epochs=1000_size=9_model=duel/best_policy.model')
         # elif option == "biased":
         #     pi_eval = alpha_PolicyValueNet(self.board.width, self.board.height,
-        #                          model_file=r'/Users/husky/AI_3603_BIGHOME/Gomoku_MCTS/checkpoint/2023-12-14-11-40-49_test_teaching_learning_collect_epochs=1000_size=9_model=biased/best_policy.model')
+        #                          model_file=r'/Users/husky/AI_3603_BIGHOME/Gomoku_MCTS/checkpoint/first-stage_epochs=1000_size=9_model=biased/best_policy.model')
         # elif option == "normal":
         #     pi_eval = alpha_PolicyValueNet(self.board.width, self.board.height,
         #                          model_file=r'/Users/husky/AI_3603_BIGHOME/Gomoku_MCTS/checkpoint/2023-12-14-11-41-03_test_teaching_learning_collect_epochs=1000_size=9_model=normal/best_policy.model')

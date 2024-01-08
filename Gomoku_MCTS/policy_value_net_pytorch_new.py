@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-An implementation of the policyValueNet in PyTorch
-Tested in PyTorch 0.2.0 and 0.3.0
 
-@author: Junxiao Song
-"""
 
 import torch
 import torch.nn as nn
@@ -106,9 +101,9 @@ class PolicyValueNet():
         else:
             # the policy value net module
             if self.use_gpu:
-                self.policy_value_net = Net(board_width, board_height, num_residual_blocks = res_block_num,num_residual_blocks= 7 ).to(self.device)
+                self.policy_value_net = Net(board_width, board_height, num_residual_blocks = res_block_num).to(self.device)
             else:
-                self.policy_value_net = Net(board_width, board_height, num_residual_blocks = res_block_num,num_residual_blocks= 7 )
+                self.policy_value_net = Net(board_width, board_height, num_residual_blocks = res_block_num)
 
         self.optimizer = optim.Adam(self.policy_value_net.parameters(),
                                         weight_decay=self.l2_const)
@@ -226,7 +221,6 @@ if __name__ == "__main__":
     import torch
     import torch.onnx
 
-    # 假设您的 Net 模型已经定义好了
     model = Net(board_width=9, board_height=9)  # 使用适当的参数初始化模型
     dummy_input = torch.randn(1, 4, 9, 9)  # 创建一个示例输入
 

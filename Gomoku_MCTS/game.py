@@ -416,38 +416,27 @@ class Game(object):
             # first Stage
             if opts.stage == 1:
                 pi_eval = duel_PolicyValueNet(self.board.width, self.board.height,
-                                              model_file=r'/Users/husky/AI_3603_BIGHOME/Gomoku_MCTS/checkpoint/2023-12-22-11-53-57_final-100th-duel_epochs=1000_size=9_model=duel/best_policy.model')
+                                              model_file=r'./checkpoint/first-stage-100th-duel_epochs=1000_size=9_model=duel/best_policy.model')
             elif opts.stage == 2:  # second Stage
                 print("using model from second stage")
                 pi_eval = duel_PolicyValueNet(self.board.width, self.board.height,
-                                              model_file="/Users/husky/AI_3603_BIGHOME/Gomoku_MCTS/checkpoint/2024-01-04-11-22-46_second-stage-duel_epochs=1000_size=9_model=duel/best_policy.model")
+                                              model_file="./checkpoint/second-stage-duel_epochs=1000_size=9_model=duel/best_policy.model")
             elif opts.stage == 3:  # third Stage
                 print("using model from third stage")
-                # pi_eval = duel_PolicyValueNet(self.board.width, self.board.height,
-                #                               model_file="/Users/husky/AI_3603_BIGHOME/Gomoku_MCTS/checkpoint/2024-01-05-20-46-00_third-stage-duel_epochs=1000_size=9_model=duel/best_policy.model")
-                # pi_eval = duel_PolicyValueNet(self.board.width, self.board.height,
-                #                               model_file="/Users/husky/AI_3603_BIGHOME/Gomoku_MCTS/checkpoint/2024-01-05-20-51-39_third-stage-duel_epochs=1000_size=9_model=duel/best_policy.model")
-                # pi_eval = duel_PolicyValueNet(self.board.width, self.board.height,
-                #                               model_file="/Users/husky/AI_3603_BIGHOME/Gomoku_MCTS/checkpoint/2024-01-06-09-16-32_third-stage-duel_epochs=1000_size=9_model=duel/best_policy.model")
-                #
-                # # modified training epochs to 100 and check_freq to 5
-                # pi_eval = duel_PolicyValueNet(self.board.width, self.board.height,
-                #                               model_file="/Users/husky/AI_3603_BIGHOME/Gomoku_MCTS/checkpoint/2024-01-06-20-10-38_third-stage-duel_epochs=100_size=9_model=duel/best_policy.model")
-                # pi_eval = duel_PolicyValueNet(self.board.width, self.board.height,
-                #                               model_file="/Users/husky/AI_3603_BIGHOME/Gomoku_MCTS/checkpoint/2024-01-07-09-39-18_third-stage-duel_epochs=100_size=9_model=duel/current_policy.model")
+
                 pi_eval = duel_PolicyValueNet(self.board.width, self.board.height,
-                                              model_file="/Users/husky/AI_3603_BIGHOME/Gomoku_MCTS/checkpoint/2024-01-07-16-21-56_third-stage-duel_epochs=10_size=9_model=duel/best_policy.model")
+                                              model_file=r"./checkpoint/third-stage-duel_epochs=10_size=9_model=duel/best_policy.model")
             else:
                 raise Exception("wrong stage")
         elif option == "biased":
             pi_eval = alpha_PolicyValueNet(self.board.width, self.board.height,
-                                           model_file=r'/Users/husky/AI_3603_BIGHOME/Gomoku_MCTS/checkpoint/2023-12-14-11-40-49_test_teaching_learning_collect_epochs=1000_size=9_model=biased/best_policy.model')
+                                           model_file=r'./checkpoint/first-stage_epochs=1000_size=9_model=biased/best_policy.model')
         elif option == "normal":
             pi_eval = alpha_PolicyValueNet(self.board.width, self.board.height,
-                                           model_file=r'Gomoku_MCTS/checkpoint/2023-12-14-18-17-07_test_teaching_learning_collect_epochs=1000_size=9_model=normal/best_policy.model')
+                                           model_file=r'./checkpoint/first-stage_epochs=1000_size=9_model=normal/best_policy.model')
         elif option == "gumbel":
             pi_eval = alpha_PolicyValueNet(self.board.width, self.board.height,
-                                           model_file=r'/Users/husky/AI_3603_BIGHOME/Gomoku_MCTS/checkpoint/2023-12-14-21-19-40_selfplay_epochs=1000_size=9_model=gumbel/current_policy.model')
+                                           model_file=r'./checkpoint/selfplay_epochs=1000_size=9_model=gumbel/best_policy.model')
         elif option == "gomokubot":
             pass
         else:
@@ -513,4 +502,4 @@ if __name__ == '__main__':
                   height=board_height,
                   n_in_row=n_in_row)
     task = Game(board)
-    task.policy_evaluate(n_games=500)
+    task.policy_evaluate(n_games=300)

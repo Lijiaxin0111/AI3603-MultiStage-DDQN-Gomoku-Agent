@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import os.path
 import random
 import numpy as np
@@ -9,12 +7,9 @@ from mcts_pure import MCTSPlayer as MCTS_Pure
 from mcts_alphaZero import MCTSPlayer
 from mcts_Gumbel_Alphazero import Gumbel_MCTSPlayer
 import torch.optim as optim
-# from policy_value_net import PolicyValueNet  # Theano and Lasagne
-# from policy_value_net_pytorch import PolicyValueNet  # Pytorch
-# from dueling_net import PolicyValueNet as dueling_PolicyValueNet  # Pytorch
-from policy_value_net_pytorch_new import PolicyValueNet as new_PolicyValueNet  # Pytorch
-# from policy_value_net_tensorflow import PolicyValueNet # Tensorflow
-# from policy_value_net_keras import PolicyValueNet # Keras
+# from policy_value_net_pytorch import PolicyValueNet
+from dueling_net import PolicyValueNet as dueling_PolicyValueNet
+from policy_value_net_pytorch_new import PolicyValueNet as new_PolicyValueNet
 # import joblib
 from torch.autograd import Variable
 import torch.nn.functional as F
