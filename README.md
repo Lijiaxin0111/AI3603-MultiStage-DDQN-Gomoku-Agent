@@ -6,7 +6,41 @@
 
 
 
+
 ## 文件结构
+
+
+
+`Gomoku_MCTS`:
+
+- `cal_kill.py` 算杀模块
+- `conv_utils.py`   把棋盘进行分块作为输入的尝试(经验证后效果不佳，并没有写入报告)
+- `dueling_net.py`  DDQN 网络实现
+- `game.py` 棋谱的定义、对弈的基本框架以及手动测试模型的代码
+- `main_worker.py` 模型的训练框架
+- `mcts_alphaZero.py` AlphaZero的实现
+- `mcts_Gumbel_Muzero` Gumbel_MuZero的实现
+- `mcts_pure.py` Pure MCST的代码
+- `policy_value_net_pytorch_new.py` ？？？
+- `policy_value_pytorch.py` 策略价值网络
+- `scripts`: 测试代码的部分脚本
+- `visualization`: 用于存放tensorboard的log
+- `checkpoint`: 训练完成的模型参数
+- `config`: 设置训练的基本参数
+
+
+`Gomoku-Bot`:
+* `test/` 测试脚本
+* `board.py` 棋盘信息
+* `cache.py` cache类
+* `eval.py` 评估函数
+* `gomoku_bot.py` 主文件，与 `Gomoku_MCTS` 接口对齐
+* `minimax.py` alpha-beta 剪枝
+* `position.py` 计算棋盘上棋子位置信息的一些函数
+* `shape.py` 存储用于局势匹配计分的一些棋盘模式
+* `zobrist.py` Zobrist 哈希实现
+
+
 
 
 
@@ -22,9 +56,7 @@
 
 
 
-``
 
-【TODO】
 
 
 
@@ -32,8 +64,32 @@
 
 
 
-【TODO】
+### Stage 1: Imitation Learning
 
+```sh
+cd scripts
+
+./first_stage_training.sh
+```
+### Stage 2: Self-Play Training
+
+```sh
+cd scripts
+
+./second_stage_self_training.sh
+```
+
+其中的 `preload_model` 来自 Stage 1
+
+### Stage 3: Competing with Masters
+
+```sh
+cd scripts
+
+./third_stage_training.sh
+```
+
+其中的 `preload_model` 来自 Stage 2
 
 
 
@@ -83,3 +139,4 @@ chrome_driver_path = 'D:\\Program_File\\googledrive\\chromedriver.exe'
 #[CHANGE]存放输出数据的文件夹
   out_file = "100_thousand_after\\\\out_better"+ str(cnt) +".txt"
 ```
+
